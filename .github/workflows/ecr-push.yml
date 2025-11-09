@@ -1,0 +1,81 @@
+name: Build & Push to ECR + Redeploy ECS
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "api/**"
+      - "runner/**"
+      - ".github/workflows/ecr-push.yml"
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}              # e.g. eu-south-2
+  ACCOUNT_ID: ${{ secrets.ECR_ACCOUNT_ID }}          # e.g. 451747690955
+  ECR_API: ${{ secrets.ECR_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/uoc-tfm/api
+  ECR_RUNNER: ${{ secrets.ECR_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/uoc-tfm/runner
+  IMAGE_TAG: latest
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # ---------- API ----------
+      - name: Build & Push API (linux/amd64)
+        working-directory: ./api
+        run: |
+          docker buildx build \
+            --platform linux/amd64 \
+            -t $ECR_API:$IMAGE_TAG \
+            --push .
+
+      # ---------- RUNNER ----------
+      - name: Build & Push Runner (linux/amd64)
+        working-directory: ./runner
+        run: |
+          docker buildx build \
+            --platform linux/amd64 \
+            -t $ECR_RUNNER:$IMAGE_TAG \
+            --push .
+
+  redeploy-ecs:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Force new deployment (API)
+        run: |
+          aws ecs update-service \
+            --cluster "${{ vars.ECS_CLUSTER }}" \
+            --service "${{ vars.ECS_API_SERVICE }}" \
+            --force-new-deployment
+
+      - name: Force new deployment (Worker)
+        run: |
+          aws ecs update-service \
+            --cluster "${{ vars.ECS_CLUSTER }}" \
+            --service "${{ vars.ECS_WORKER_SERVICE }}" \
+            --force-new-deployment
