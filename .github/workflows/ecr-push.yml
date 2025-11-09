@@ -9,8 +9,8 @@ on:
       - ".github/workflows/ecr-push.yml"
 
 env:
-  AWS_REGION: ${{ secrets.AWS_REGION }}              # e.g. eu-south-2
-  ACCOUNT_ID: ${{ secrets.ECR_ACCOUNT_ID }}          # e.g. 451747690955
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  ACCOUNT_ID: ${{ secrets.ECR_ACCOUNT_ID }}
   ECR_API: ${{ secrets.ECR_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/uoc-tfm/api
   ECR_RUNNER: ${{ secrets.ECR_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/uoc-tfm/runner
   IMAGE_TAG: latest
@@ -18,9 +18,16 @@ env:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
+    permissions: { contents: read }
+
     steps:
+      - name: Validate required secrets
+        run: |
+          test -n "${{ secrets.AWS_ACCESS_KEY_ID }}" || (echo "Missing AWS_ACCESS_KEY_ID" && exit 1)
+          test -n "${{ secrets.AWS_SECRET_ACCESS_KEY }}" || (echo "Missing AWS_SECRET_ACCESS_KEY" && exit 1)
+          test -n "${{ secrets.AWS_REGION }}" || (echo "Missing AWS_REGION" && exit 1)
+          test -n "${{ secrets.ECR_ACCOUNT_ID }}" || (echo "Missing ECR_ACCOUNT_ID" && exit 1)
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -34,30 +41,30 @@ jobs:
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Ensure ECR repositories exist (api/runner)
+        run: |
+          aws ecr describe-repositories --repository-names uoc-tfm/api || aws ecr create-repository --repository-name uoc-tfm/api
+          aws ecr describe-repositories --repository-names uoc-tfm/runner || aws ecr create-repository --repository-name uoc-tfm/runner
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # ---------- API ----------
       - name: Build & Push API (linux/amd64)
+        if: hashFiles('api/Dockerfile') != ''
         working-directory: ./api
         run: |
-          docker buildx build \
-            --platform linux/amd64 \
-            -t $ECR_API:$IMAGE_TAG \
-            --push .
+          docker buildx build --platform linux/amd64 -t $ECR_API:$IMAGE_TAG --push .
 
-      # ---------- RUNNER ----------
       - name: Build & Push Runner (linux/amd64)
+        if: hashFiles('runner/Dockerfile') != ''
         working-directory: ./runner
         run: |
-          docker buildx build \
-            --platform linux/amd64 \
-            -t $ECR_RUNNER:$IMAGE_TAG \
-            --push .
+          docker buildx build --platform linux/amd64 -t $ECR_RUNNER:$IMAGE_TAG --push .
 
   redeploy-ecs:
     needs: build-and-push
     runs-on: ubuntu-latest
+    if: ${{ success() }}
     steps:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
