@@ -143,3 +143,4 @@ aws ecs update-service \
   --desired-count 0 \
   --region eu-south-2 \
   --profile uoc-tfm
+  ```
