@@ -1,12 +1,14 @@
 import { Controller, Post, Get, Body, Query } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SesService } from './ses.service';
+import { UsersService } from '../users/users.service';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private auth: AuthService,
     private ses: SesService,
+    private users: UsersService,
   ) {}
 
   @Post('request')
@@ -19,12 +21,7 @@ export class AuthController {
   @Get('verify')
   async verify(@Query('token') token: string) {
     const payload = this.auth.verifyLoginToken(token);
-
-    // TODO: create or fetch user from DB (in API-3)
-    const user = {
-      id: 1,
-      email: payload.email,
-    };
+    const user = await this.users.findOrCreateByEmail(payload.email);
 
     const sessionToken = this.auth.generateLoginToken(user.email);
 
