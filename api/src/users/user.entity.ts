@@ -4,10 +4,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  OneToMany,
 } from 'typeorm';
-import { Submission } from '../submissions/submission.entity';
-import { Pit } from '../pits/pit.entity';
 
 @Entity('users')
 export class User {
@@ -25,10 +22,4 @@ export class User {
 
   @UpdateDateColumn()
   updatedAt: Date;
-
-  @OneToMany(() => Submission, (submission) => submission.user)
-  submissions: Submission[];
-
-  @OneToMany(() => Pit, (pit) => pit.owner)
-  ownedPits: Pit[];
 }

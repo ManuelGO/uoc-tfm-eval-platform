@@ -2,12 +2,9 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  ManyToOne,
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { User } from '../users/user.entity';
-import { Pit } from '../pits/pit.entity';
 
 export type SubmissionStatus = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED';
 
@@ -16,11 +13,11 @@ export class Submission {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => User, (user) => user.submissions, { eager: true })
-  user: User;
+  @Column({ type: 'uuid' })
+  userId: string;
 
-  @ManyToOne(() => Pit, (pit) => pit.submissions, { eager: true })
-  pit: Pit;
+  @Column({ type: 'uuid' })
+  pitId: string;
 
   @Column()
   s3Key: string;
