@@ -1,14 +1,23 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Submission } from './submission.entity';
-import { SubmissionsService } from './submissions.service';
+
 import { SubmissionsController } from './submissions.controller';
+import { SubmissionsService } from './submissions.service';
+
+import { Submission } from './submission.entity';
+import { Pit } from '../pits/pit.entity';
+import { User } from '../users/user.entity';
 import { AuthModule } from '../auth/auth.module';
 import { UsersModule } from '../users/users.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Submission]), AuthModule, UsersModule],
-  providers: [SubmissionsService],
+  imports: [
+    TypeOrmModule.forFeature([Submission, Pit, User]),
+    forwardRef(() => AuthModule),
+    UsersModule,
+  ],
   controllers: [SubmissionsController],
+  providers: [SubmissionsService],
+  exports: [SubmissionsService],
 })
 export class SubmissionsModule {}

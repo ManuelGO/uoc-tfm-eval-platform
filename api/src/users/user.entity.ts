@@ -1,9 +1,11 @@
+import { Submission } from 'src/submissions/submission.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToMany,
 } from 'typeorm';
 
 @Entity('users')
@@ -22,4 +24,7 @@ export class User {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @OneToMany(() => Submission, (submission) => submission.user)
+  submissions: Submission[];
 }

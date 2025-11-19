@@ -1,10 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+  Injectable,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Submission } from './submission.entity';
+
+import { Submission, SubmissionStatus } from './submission.entity';
+import { Pit } from '../pits/pit.entity';
 
 import { RequestUploadDto } from './dto/request-upload.dto';
 import { ConfirmUploadDto } from './dto/confirm-upload.dto';
+import { User } from '../users/user.entity';
 
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
@@ -15,8 +23,15 @@ export class SubmissionsService {
 
   constructor(
     @InjectRepository(Submission)
-    private submissionsRepo: Repository<Submission>,
+    private readonly submissionsRepo: Repository<Submission>,
+
+    @InjectRepository(Pit)
+    private readonly pitRepo: Repository<Pit>,
+
+    @InjectRepository(User)
+    private readonly usersRepo: Repository<User>,
   ) {
+    console.log(process.env.AWS_REGION);
     this.s3 = new S3Client({
       region: process.env.AWS_REGION,
     });
@@ -44,11 +59,60 @@ export class SubmissionsService {
   }
 
   async confirmUpload(dto: ConfirmUploadDto, userId: string) {
+    const { pitId, fileKey } = dto;
+
+    // 1) Basic validation
+    if (!fileKey) {
+      throw new BadRequestException('fileKey is required');
+    }
+
+    if (!fileKey.endsWith('.zip')) {
+      throw new BadRequestException('File must be a .zip');
+    }
+
+    // Expected pattern: submissions/<userId>/<pitId>/<something>.zip
+    const segments = fileKey.split('/');
+
+    if (segments.length < 4 || segments[0] !== 'submissions') {
+      throw new BadRequestException('Invalid fileKey format');
+    }
+
+    const [, userIdFromKey, pitIdFromKey] = segments;
+
+    if (userIdFromKey !== userId) {
+      throw new ForbiddenException(
+        'fileKey does not belong to the authenticated user',
+      );
+    }
+
+    if (pitIdFromKey !== pitId) {
+      throw new ForbiddenException('fileKey does not match provided pitId');
+    }
+
+    // 2) Ensure PIT exists
+    const pit: Pit | null = await this.pitRepo.findOne({
+      where: { id: pitId },
+    });
+
+    if (!pit) {
+      throw new NotFoundException('Pit not found');
+    }
+
+    const user: User | null = await this.usersRepo.findOne({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // 3) Create new submission with status PENDING
     const submission = this.submissionsRepo.create({
-      userId,
-      pitId: dto.pitId,
-      s3Key: dto.fileKey,
-      status: 'PENDING',
+      pit,
+      s3Key: fileKey,
+      status: SubmissionStatus.PENDING,
+      // Relations by id; TypeORM crea el FK
+      user,
     });
 
     await this.submissionsRepo.save(submission);

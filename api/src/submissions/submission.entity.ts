@@ -2,34 +2,40 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
+  ManyToOne,
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { User } from '../users/user.entity';
+import { Pit } from '../pits/pit.entity';
 
-export type SubmissionStatus = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED';
+export enum SubmissionStatus {
+  PENDING = 'PENDING',
+  RUNNING = 'RUNNING',
+  DONE = 'DONE',
+  ERROR = 'ERROR',
+}
 
 @Entity('submissions')
 export class Submission {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'uuid' })
-  userId: string;
+  @ManyToOne(() => User, (user) => user.submissions, { eager: false })
+  user: User;
 
-  @Column({ type: 'uuid' })
-  pitId: string;
+  @ManyToOne(() => Pit, (pit) => pit.submissions, { eager: false })
+  pit: Pit;
 
   @Column()
   s3Key: string;
 
-  @Column({ type: 'varchar', length: 32, default: 'PENDING' })
+  @Column({
+    type: 'enum',
+    enum: SubmissionStatus,
+    default: SubmissionStatus.PENDING,
+  })
   status: SubmissionStatus;
-
-  @Column({ type: 'float', nullable: true })
-  score?: number;
-
-  @Column({ type: 'text', nullable: true })
-  feedbackSummary?: string;
 
   @CreateDateColumn()
   createdAt: Date;
