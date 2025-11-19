@@ -6,19 +6,26 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
+import { Request } from 'express';
+
+interface AuthenticatedRequest extends Request {
+  user?: {
+    id: string;
+    email: string;
+  };
+}
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
-    private jwt: JwtService,
-    private users: UsersService,
+    private readonly jwt: JwtService,
+    private readonly users: UsersService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
 
-    const authHeader =
-      request.headers['authorization'] || request.headers['Authorization'];
+    const authHeader = request.headers['authorization'];
 
     if (!authHeader || typeof authHeader !== 'string') {
       throw new UnauthorizedException('Missing Authorization header');
@@ -37,10 +44,8 @@ export class AuthGuard implements CanActivate {
         throw new UnauthorizedException('Invalid token payload');
       }
 
-      // Recuperar el usuario desde la BD
       const user = await this.users.findOrCreateByEmail(payload.email);
 
-      // Adjuntar el usuario a la request para usarlo en los controladores
       request.user = {
         id: user.id,
         email: user.email,
