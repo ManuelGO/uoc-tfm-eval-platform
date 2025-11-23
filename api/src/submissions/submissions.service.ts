@@ -16,6 +16,7 @@ import { User } from '../users/user.entity';
 
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { SqsService } from 'src/queue/sqs.service';
 
 @Injectable()
 export class SubmissionsService {
@@ -30,8 +31,9 @@ export class SubmissionsService {
 
     @InjectRepository(User)
     private readonly usersRepo: Repository<User>,
+
+    private readonly sqs: SqsService,
   ) {
-    console.log(process.env.AWS_REGION);
     this.s3 = new S3Client({
       region: process.env.AWS_REGION,
     });
@@ -116,6 +118,8 @@ export class SubmissionsService {
     });
 
     await this.submissionsRepo.save(submission);
+
+    await this.sqs.sendSubmissionEnqueued(submission);
 
     return {
       status: 'ok',

@@ -23,6 +23,7 @@
     "@aws-sdk/client-s3": "^3.932.0",
     "@aws-sdk/client-ses": "^3.932.0",
     "@aws-sdk/client-sesv2": "^3.932.0",
+    "@aws-sdk/client-sqs": "^3.935.0",
     "@aws-sdk/s3-request-presigner": "^3.932.0",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",

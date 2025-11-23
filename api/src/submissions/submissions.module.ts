@@ -9,6 +9,7 @@ import { Pit } from '../pits/pit.entity';
 import { User } from '../users/user.entity';
 import { AuthModule } from '../auth/auth.module';
 import { UsersModule } from '../users/users.module';
+import { SqsService } from '../queue/sqs.service';
 
 @Module({
   imports: [
@@ -17,7 +18,7 @@ import { UsersModule } from '../users/users.module';
     UsersModule,
   ],
   controllers: [SubmissionsController],
-  providers: [SubmissionsService],
+  providers: [SubmissionsService, SqsService],
   exports: [SubmissionsService],
 })
 export class SubmissionsModule {}
