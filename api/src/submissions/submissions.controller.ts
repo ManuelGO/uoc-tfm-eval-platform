@@ -1,4 +1,12 @@
-import { Controller, Post, Body, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  Req,
+  Get,
+  Param,
+} from '@nestjs/common';
 import { SubmissionsService } from './submissions.service';
 import { RequestUploadDto } from './dto/request-upload.dto';
 import { ConfirmUploadDto } from './dto/confirm-upload.dto';
@@ -37,5 +45,11 @@ export class SubmissionsController {
     }
 
     return this.service.confirmUpload(dto, req.user.id);
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('feedback/:id')
+  getFeedback(@Param('id') id: string, @Req() req: { user: { id: string } }) {
+    return this.service.getFeedbackForUser(id, req.user.id);
   }
 }

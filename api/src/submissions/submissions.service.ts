@@ -126,4 +126,31 @@ export class SubmissionsService {
       submissionId: submission.id,
     };
   }
+
+  async getFeedbackForUser(submissionId: string, userId: string) {
+    const submission = await this.submissionsRepo.findOne({
+      where: { id: submissionId },
+      relations: ['user', 'pit'],
+    });
+
+    if (!submission) {
+      throw new NotFoundException('Submission not found');
+    }
+
+    if (submission.user.id !== userId) {
+      throw new ForbiddenException('You are not allowed to see this feedback');
+    }
+
+    return {
+      submissionId: submission.id,
+      pitId: submission.pit.id,
+      pitTitle: submission.pit.title,
+      status: submission.status,
+      score: submission.score,
+      feedback: submission.feedback,
+      logsS3Key: submission.logsS3Key,
+      createdAt: submission.createdAt,
+      updatedAt: submission.updatedAt,
+    };
+  }
 }
