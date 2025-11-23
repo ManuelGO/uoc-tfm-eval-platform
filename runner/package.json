@@ -1,0 +1,46 @@
+{
+  "name": "runner",
+  "version": "1.0.0",
+  "description": "UOC TFM Eval Platform - Runner Service",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "rimraf dist && tsc",
+    "start": "node dist/index.js",
+    "start:dev": "ts-node src/index.ts",
+    "lint": "eslint \"src/**/*.ts\" --fix",
+    "test": "jest"
+  },
+  "keywords": [
+    "runner",
+    "evaluation",
+    "submission",
+    "sqs"
+  ],
+  "author": "Manuel de Jesús González Arvelo",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.932.0",
+    "@aws-sdk/client-sqs": "^3.935.0",
+    "pg": "^8.16.3",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.7",
+    "@types/pg": "^8.11.10",
+    "eslint": "^9.18.0",
+    "rimraf": "^6.0.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3",
+    "jest": "^30.0.0",
+    "@types/jest": "^30.0.0",
+    "ts-jest": "^29.2.5"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/__tests__/**/*.ts",
+      "**/?(*.)+(spec|test).ts"
+    ]
+  }
+}
