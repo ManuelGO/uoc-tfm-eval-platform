@@ -3,9 +3,17 @@ import { dirname } from 'node:path';
 import {
   S3Client,
   GetObjectCommand,
+  PutObjectCommand,
   type GetObjectCommandOutput,
 } from '@aws-sdk/client-s3';
 import type { RunnerConfig } from '../config/config.js';
+
+/**
+ * S3 path prefix constants
+ * Exported for use in other modules
+ */
+export const SUBMISSIONS_PREFIX = 'submissions';
+export const LOGS_PREFIX = 'logs';
 
 export class S3StorageService {
   private readonly client: S3Client;
@@ -74,6 +82,66 @@ export class S3StorageService {
     });
 
     return localPath;
+  }
+
+  /**
+   * Upload execution logs to S3
+   *
+   * @param submissionId UUID of the submission
+   * @param logs         Complete execution logs (stdout + stderr)
+   * @param maxBytes     Optional maximum log size in bytes (for security/cost control)
+   * @returns            S3 key where logs were stored
+   */
+  async uploadLogs(
+    submissionId: string,
+    logs: string,
+    maxBytes?: number,
+  ): Promise<string> {
+    const logsS3Key = `${LOGS_PREFIX}/${submissionId}/run.log`;
+
+    console.log('[S3StorageService] Uploading logs to S3', {
+      submissionId,
+      logsS3Key,
+      logSize: logs.length,
+    });
+
+    // Truncate logs if they exceed maximum size
+    if (maxBytes && logs.length > maxBytes) {
+      console.warn('[S3StorageService] Truncating large logs', {
+        submissionId,
+        maxBytes,
+        actual: logs.length,
+      });
+
+      logs =
+        logs.slice(0, maxBytes) +
+        '\n\n[LOG OUTPUT TRUNCATED DUE TO SIZE LIMIT]\n';
+    }
+
+    const command = new PutObjectCommand({
+      Bucket: this.bucket,
+      Key: logsS3Key,
+      Body: logs,
+      ContentType: 'text/plain',
+    });
+
+    try {
+      await this.client.send(command);
+
+      console.log('[S3StorageService] Logs uploaded successfully', {
+        submissionId,
+        logsS3Key,
+      });
+
+      return logsS3Key;
+    } catch (error) {
+      console.error('[S3StorageService] Failed to upload logs to S3', {
+        submissionId,
+        logsS3Key,
+        error,
+      });
+      throw error;
+    }
   }
 
   private ensureDirectory(path: string): void {
