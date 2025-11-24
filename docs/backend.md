@@ -2403,3 +2403,89 @@ This complete workflow demonstrates:
 - Feedback delivery through the API
 
 This is the full backend lifecycle of the UOC TFM evaluation platform.
+
+---
+
+## 18. Runner Service Setup and Boot Instructions
+
+The Runner service is a separate microservice that processes submissions asynchronously. It runs independently from the API and is deployed as its own ECS Fargate task.
+
+### 18.1 Local Setup
+
+**Navigate to runner directory:**
+```bash
+cd runner
+```
+
+**Install dependencies:**
+```bash
+npm install
+```
+
+**Configure environment:**
+```bash
+cp .env.example .env
+```
+
+Edit `.env` and configure the following required variables:
+- `AWS_REGION` - AWS region (e.g., eu-south-2)
+- `AWS_S3_BUCKET` - S3 bucket name
+- `AWS_SQS_QUEUE_URL` - Full SQS queue URL
+- `DATABASE_URL` - PostgreSQL connection string
+
+Or use individual database variables:
+- `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`, `DB_NAME`
+
+Optional configuration:
+- `RUNNER_POLL_INTERVAL_MS` (default: 20000)
+- `RUNNER_TIMEOUT_MS` (default: 120000)
+- `RUNNER_MAX_LOG_BYTES` (default: 200000)
+
+**Build and run:**
+```bash
+npm run build
+npm run start
+```
+
+### 18.2 Configuration Validation
+
+The runner validates all required environment variables on startup. If any are missing, it will:
+1. Display a clear error message
+2. Exit with code 1
+3. Prevent startup in an invalid state
+
+**Example successful startup:**
+```
+🚀 Runner Service starting...
+
+✓ Configuration loaded successfully
+
+📋 Configuration:
+  AWS Region: eu-south-2
+  S3 Bucket: uoc-tfm-eval-platform
+  SQS Queue: https://sqs.eu-south-2.amazonaws.com/...
+  Poll Interval: 20000ms
+  Execution Timeout: 120000ms
+  Max Log Size: 200000 bytes
+  JDK Version: 17
+  Build Tool: maven
+
+✓ Runner initialization complete
+```
+
+### 18.3 Runner Architecture
+
+The runner follows this workflow:
+1. Poll SQS for submission messages
+2. Download submission ZIP from S3
+3. Extract ZIP into isolated workspace
+4. Load PIT configuration
+5. Execute tests (Maven/Gradle)
+6. Parse results (JUnit XML)
+7. Upload logs to S3
+8. Update submission status in PostgreSQL
+9. Delete SQS message (on success)
+
+For complete runner documentation, see [`docs/runner.md`](./runner.md).
+
+---
