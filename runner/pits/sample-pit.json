@@ -1,0 +1,17 @@
+{
+  "language": "java",
+  "buildTool": "maven",
+  "testCommand": "mvn -q test",
+  "maxTimeoutMs": 60000,
+  "setupCommands": [
+    "mvn -q clean compile"
+  ],
+  "environment": {
+    "JAVA_HOME": "/usr/lib/jvm/java-17-openjdk",
+    "MAVEN_OPTS": "-Xmx512m"
+  },
+  "requiredFiles": [
+    "pom.xml",
+    "src/"
+  ]
+}
