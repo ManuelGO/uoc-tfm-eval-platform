@@ -373,13 +373,44 @@ docker run --env-file .env uoc-tfm/runner:latest
 
 See [ECS-DEPLOYMENT.md](../runner/ECS-DEPLOYMENT.md) for complete deployment guide.
 
-**Quick deploy:**
-1. Push changes to `main` branch
-2. GitHub Actions automatically:
-   - Builds Docker image
-   - Pushes to ECR
+**CI/CD Pipeline:**
+The runner uses GitHub Actions (`.github/workflows/ecr-push.yml`) for automated deployment:
+
+```
+Code Push → GitHub Actions → ECR → ECS Fargate
+```
+
+**Automatic Deployment:**
+1. Push changes to `main` branch with changes in `runner/**`
+2. GitHub Actions workflow triggers automatically:
+   - Validates AWS credentials
+   - Builds Docker image (multi-stage, linux/amd64)
+   - Pushes to ECR: `uoc-tfm/runner:latest`
    - Forces ECS service redeployment
-3. ECS pulls new image and restarts tasks
+3. ECS performs rolling update with zero downtime
+4. New tasks start running with latest code
+
+**Required GitHub Secrets:**
+- `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`
+- `AWS_REGION`, `ECR_ACCOUNT_ID`
+
+**Required GitHub Variables:**
+- `ECS_CLUSTER`, `ECS_WORKER_SERVICE`
+
+**Manual Deployment:**
+```bash
+# Build and push manually
+cd runner
+docker build -t uoc-tfm/runner:latest .
+docker tag uoc-tfm/runner:latest $ECR_RUNNER:latest
+docker push $ECR_RUNNER:latest
+
+# Force ECS redeployment
+aws ecs update-service \
+  --cluster $CLUSTER \
+  --service $WORKER_SERVICE \
+  --force-new-deployment
+```
 
 **CloudWatch Logs:**
 ```bash
@@ -494,10 +525,24 @@ aws logs tail /ecs/uoc-tfm-runner --follow
 ### ✅ RUN-11: Dockerize Runner and Deploy to ECS
 **Status:** ✅ Completed
 **Deliverables:**
-- Multi-stage Dockerfile
-- .dockerignore
-- GitHub Actions integration
-- ECS deployment documentation
+- Multi-stage Dockerfile with tini init system
+- Non-root user (UID 1001)
+- OpenJDK 17 + Maven runtime
+- .dockerignore optimized for build
+- Health check configuration
+- ECS task definition documentation
+
+### ✅ RUN-12: GitHub Actions CI/CD Pipeline
+**Status:** ✅ Completed
+**Deliverables:**
+- Automated ECR build and push workflow
+- Multi-platform build support (linux/amd64)
+- ECS automatic redeployment on merge to main
+- Secrets and variables configuration
+- Path-based triggering (runner/**)
+- Build validation and error handling
+- CloudWatch Logs integration
+- Complete deployment documentation
 
 ---
 
@@ -507,10 +552,13 @@ aws logs tail /ecs/uoc-tfm-runner --follow
 - ✅ Isolated workspace per submission
 - ✅ ZIP Slip attack protection
 - ✅ Resource limits (timeout, log size)
-- ✅ Connection string not logged
-- ✅ Secrets via AWS Secrets Manager
+- ✅ Connection string not logged in application logs
+- ✅ Environment variables via ECS task definition
+- ✅ RDS access restricted by VPC security groups
 - ✅ Path traversal validation
 - ✅ Progressive process termination (SIGTERM → SIGKILL)
+- ✅ Tini init system for proper signal handling
+- ⚠️  Future: Consider AWS Secrets Manager for DATABASE_URL
 
 ---
 

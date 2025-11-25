@@ -74,6 +74,10 @@ ECS_WORKER_SERVICE     # Runner service name (e.g., uoc-tfm-worker-service)
           "value": "https://sqs.eu-south-2.amazonaws.com/451747690955/submissions-queue"
         },
         {
+          "name": "DATABASE_URL",
+          "value": "postgresql://postgres:TFMdb#SecureKey9@tfmdb.cfeggi80y56w.eu-south-2.rds.amazonaws.com:5432/tfmdb"
+        },
+        {
           "name": "RUNNER_POLL_INTERVAL_MS",
           "value": "20000"
         },
@@ -94,12 +98,6 @@ ECS_WORKER_SERVICE     # Runner service name (e.g., uoc-tfm-worker-service)
           "value": "maven"
         }
       ],
-      "secrets": [
-        {
-          "name": "DATABASE_URL",
-          "valueFrom": "arn:aws:secretsmanager:region:account-id:secret:runner/database-url"
-        }
-      ],
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
@@ -117,8 +115,8 @@ ECS_WORKER_SERVICE     # Runner service name (e.g., uoc-tfm-worker-service)
       }
     }
   ],
-  "taskRoleArn": "arn:aws:iam::account-id:role/ecsTaskRole",
-  "executionRoleArn": "arn:aws:iam::account-id:role/ecsTaskExecutionRole"
+  "taskRoleArn": "arn:aws:iam::451747690955:role/ecsTaskRole",
+  "executionRoleArn": "arn:aws:iam::451747690955:role/ecsTaskExecutionRole"
 }
 ```
 
@@ -143,14 +141,18 @@ ECS_WORKER_SERVICE     # Runner service name (e.g., uoc-tfm-worker-service)
 
 ## Environment Variables
 
+All configuration is provided via **environment variables** in the ECS task definition.
+
+**Note:** The current configuration does **not** use AWS Secrets Manager. All values, including `DATABASE_URL`, are passed as plain environment variables in the containerDefinitions.
+
 ### Required Variables
 
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `AWS_REGION` | AWS region | `eu-south-2` |
 | `AWS_S3_BUCKET` | S3 bucket for submissions | `uoc-tfm-eval-platform` |
-| `AWS_SQS_QUEUE_URL` | SQS queue URL | `https://sqs.eu-south-2...` |
-| `DATABASE_URL` | PostgreSQL connection string | `postgresql://user:pass@host:5432/db` |
+| `AWS_SQS_QUEUE_URL` | SQS queue URL | `https://sqs.eu-south-2.amazonaws.com/451747690955/submissions-queue` |
+| `DATABASE_URL` | PostgreSQL connection string | `postgresql://postgres:password@tfmdb.xxx.eu-south-2.rds.amazonaws.com:5432/tfmdb` |
 
 ### Optional Variables
 
@@ -188,6 +190,8 @@ ECS_WORKER_SERVICE     # Runner service name (e.g., uoc-tfm-worker-service)
 
 ### Task Role
 
+The task role provides permissions for the running container to access AWS services.
+
 ```json
 {
   "Version": "2012-10-17",
@@ -199,7 +203,7 @@ ECS_WORKER_SERVICE     # Runner service name (e.g., uoc-tfm-worker-service)
         "sqs:DeleteMessage",
         "sqs:GetQueueAttributes"
       ],
-      "Resource": "arn:aws:sqs:region:account:submissions-queue"
+      "Resource": "arn:aws:sqs:eu-south-2:451747690955:submissions-queue"
     },
     {
       "Effect": "Allow",
@@ -213,16 +217,93 @@ ECS_WORKER_SERVICE     # Runner service name (e.g., uoc-tfm-worker-service)
 }
 ```
 
+**Note on RDS Access:**
+- RDS/PostgreSQL access is controlled via **VPC Security Groups**, not IAM
+- The ECS task security group must allow outbound traffic to RDS on port 5432
+- The RDS security group must allow inbound traffic from the ECS task security group
+- No IAM permissions are required for PostgreSQL connections
+
+**Current Configuration:**
+- ✅ SQS permissions for message polling and deletion
+- ✅ S3 permissions for submission downloads and log uploads
+- ✅ RDS access via security group rules (not IAM)
+- ❌ No AWS Secrets Manager permissions (DATABASE_URL passed as environment variable)
+
 ## Deployment Process
 
 ### Automatic Deployment (via GitHub Actions)
 
-1. Push changes to `main` branch in `runner/` directory
-2. GitHub Actions automatically:
-   - Builds Docker image
-   - Pushes to ECR
-   - Forces ECS service redeployment
-3. ECS pulls new image and restarts tasks
+The runner service uses a fully automated CI/CD pipeline defined in `.github/workflows/ecr-push.yml`.
+
+**Workflow Trigger:**
+- Push to `main` branch with changes in:
+  - `runner/**` (any Runner code changes)
+  - `api/**` (API changes - builds both services)
+  - `.github/workflows/ecr-push.yml` (workflow changes)
+
+**Pipeline Steps:**
+
+1. **Build & Push Job:**
+   - Validates required AWS secrets
+   - Checks out repository
+   - Configures AWS credentials
+   - Logs into Amazon ECR
+   - Ensures ECR repositories exist (`uoc-tfm/runner`)
+   - Builds Docker image for linux/amd64 platform
+   - Pushes image to ECR with `latest` tag
+
+2. **Redeploy ECS Job:**
+   - Runs only if build succeeds
+   - Forces new deployment of ECS Worker service
+   - ECS pulls new image and performs rolling update
+
+**Required GitHub Secrets:**
+```
+AWS_ACCESS_KEY_ID       # AWS credentials for ECR/ECS access
+AWS_SECRET_ACCESS_KEY   # AWS secret key
+AWS_REGION              # e.g., eu-south-2
+ECR_ACCOUNT_ID          # Your AWS account ID (e.g., 451747690955)
+```
+
+**Required GitHub Variables:**
+```
+ECS_CLUSTER            # ECS cluster name
+ECS_WORKER_SERVICE     # Runner service name (e.g., uoc-tfm-worker-service)
+```
+
+**Deployment Flow:**
+```
+Push to main (runner/**)
+    ↓
+GitHub Actions triggered
+    ↓
+Build Docker image (linux/amd64)
+    ↓
+Push to ECR (uoc-tfm/runner:latest)
+    ↓
+ECS force new deployment
+    ↓
+ECS pulls new image
+    ↓
+Rolling update (zero downtime)
+    ↓
+New tasks running ✓
+```
+
+**Verifying Deployment:**
+```bash
+# Check GitHub Actions status
+gh run list --workflow=ecr-push.yml --limit 5
+
+# Watch ECS deployment progress
+aws ecs describe-services \
+  --cluster your-cluster \
+  --services uoc-tfm-worker-service \
+  --query 'services[0].deployments'
+
+# Tail logs to verify new version
+aws logs tail /ecs/uoc-tfm-runner --follow --since 5m
+```
 
 ### Manual Deployment
 
@@ -259,6 +340,13 @@ View runner logs in CloudWatch:
 ```bash
 aws logs tail /ecs/uoc-tfm-runner --follow
 ```
+
+**Note on S3 Execution Logs:**
+Runner execution logs for each submission are stored in S3 at:
+```
+s3://uoc-tfm-eval-platform/logs/<submissionId>/run.log
+```
+These logs contain the complete stdout/stderr output from test execution and are accessible via the API's `/feedback/:submissionId` endpoint.
 
 ### ECS Service Status
 
@@ -350,8 +438,10 @@ aws ecs update-service \
 
 ## Security Best Practices
 
-- ✅ Use non-root user in container
-- ✅ Store secrets in AWS Secrets Manager
-- ✅ Use VPC endpoints for AWS services
+- ✅ Use non-root user in container (UID 1001)
+- ✅ Environment variables via ECS task definition
+- ✅ RDS access restricted by security groups
+- ✅ Use VPC endpoints for AWS services (optional cost optimization)
 - ✅ Enable container insights for monitoring
 - ✅ Regular security scanning of Docker images
+- ⚠️  Consider AWS Secrets Manager for production (currently using environment variables)

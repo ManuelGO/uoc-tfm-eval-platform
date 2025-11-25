@@ -64,10 +64,10 @@ USER runner
 
 # Health check - checks if Node.js process is running
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-    CMD ps aux | grep "node.*index.js" || exit 1
+    CMD ps aux | grep "node.*main.js" || exit 1
 
 # Use tini as init system to properly handle signals
 ENTRYPOINT ["/sbin/tini", "--"]
 
-# Start the runner (TypeScript compiles src/main.ts to dist/index.js)
-CMD ["node", "dist/index.js"]
+# Start the runner (TypeScript compiles src/main.ts to dist/main.js)
+CMD ["node", "dist/main.js"]
