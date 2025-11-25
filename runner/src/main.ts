@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 import { loadConfig, type RunnerConfig } from './config/config.js';
 import { SqsConsumerService } from './queue/sqs-consumer.service.js';
-import type { SubmissionMessage } from './queue/interfaces/submission-message.interface.js';
+import { ProcessingService } from './processing/processing.service.js';
 
 // Load environment variables
 dotenv.config();
@@ -11,31 +11,13 @@ dotenv.config();
  *
  * This service processes submission jobs from SQS, downloads ZIP files from S3,
  * executes tests in an isolated environment, and stores results back to S3 and RDS.
- */
-
-// Global reference to consumer for graceful shutdown
-let consumer: SqsConsumerService | null = null;
-
-/**
- * Process a submission message
- * This is the main processing pipeline that will be called for each message
  *
- * @param message - The submission message to process
+ * RUN-10: Implements robust error handling and retry strategy
  */
-async function processSubmission(message: SubmissionMessage): Promise<void> {
-  // TODO: Implement full processing pipeline in future issues:
-  // 1. Download ZIP from S3 (RUN-4)
-  // 2. Extract ZIP to workspace (RUN-5)
-  // 3. Load PIT configuration (RUN-6)
-  // 4. Execute tests (RUN-7)
-  // 5. Upload logs to S3 (RUN-8)
-  // 6. Update submission result in DB (RUN-9)
 
-  // For now, just simulate processing with a delay
-  console.log(`   [Processing] Starting pipeline for ${message.submissionId}...`);
-  await new Promise((resolve) => setTimeout(resolve, 2000)); // 2 second delay
-  console.log(`   [Processing] Pipeline complete for ${message.submissionId}`);
-}
+// Global references for graceful shutdown
+let consumer: SqsConsumerService | null = null;
+let processor: ProcessingService | null = null;
 
 /**
  * Bootstrap the runner service
@@ -65,8 +47,13 @@ async function bootstrap(): Promise<void> {
   console.log(`  JDK Version: ${config.jdkVersion}`);
   console.log(`  Build Tool: ${config.buildTool}`);
 
-  // Initialize SQS Consumer
+  // Initialize services
   console.log('\n📦 Initializing services...');
+
+  // Initialize processing service (orchestrates the pipeline)
+  processor = new ProcessingService(config);
+
+  // Initialize SQS Consumer
   consumer = new SqsConsumerService(
     {
       queueUrl: config.awsSqsQueueUrl,
@@ -75,7 +62,8 @@ async function bootstrap(): Promise<void> {
       waitTimeSeconds: 20, // Long polling
       visibilityTimeout: 300, // 5 minutes to process before message becomes visible again
     },
-    processSubmission
+    // Bind processor's method as the message handler
+    (message) => processor!.processSubmission(message)
   );
 
   // Start polling for messages
@@ -88,18 +76,28 @@ async function bootstrap(): Promise<void> {
 /**
  * Handle graceful shutdown
  */
-function shutdown(): void {
+async function shutdown(): Promise<void> {
   console.log('\n🛑 Shutdown signal received');
 
+  // Stop accepting new messages
   if (consumer) {
     consumer.stop();
   }
 
   // Give some time for ongoing processing to complete
-  setTimeout(() => {
-    console.log('✓ Runner stopped');
-    process.exit(0);
-  }, 3000);
+  await new Promise((resolve) => setTimeout(resolve, 3000));
+
+  // Close database connections
+  if (processor) {
+    try {
+      await processor.close();
+    } catch (error) {
+      console.error('Error closing processor:', error);
+    }
+  }
+
+  console.log('✓ Runner stopped');
+  process.exit(0);
 }
 
 // Register shutdown handlers

@@ -1,0 +1,56 @@
+# Node modules
+node_modules/
+npm-debug.log*
+
+# Build output (will be generated during build)
+dist/
+
+# Development files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+*.md
+
+# Test files
+**/*.test.ts
+**/*.spec.ts
+test/
+coverage/
+
+# CI/CD
+.github/
+
+# Temporary files
+tmp/
+work/
+logs/
+*.log
+
+# TypeScript source (copied separately)
+# src/ - We need this for the build stage
+
+# ESLint
+.eslintrc*
+eslint.config.*
+
+# Claude
+.claude/
