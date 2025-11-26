@@ -1,45 +1,40 @@
 # ==============================================================================
-# Stage 1: Build NestJS API (TypeScript → dist/)
+# Stage 1: Build NestJS API
 # ==============================================================================
 FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy package metadata
+# Install dependencies
 COPY package*.json ./
-
-# Install all dependencies (including devDeps for build)
 RUN npm ci
 
-# Copy TypeScript config and sources
-COPY tsconfig.json ./
-# Si tienes nest-cli.json u otros, añádelos también:
-# COPY nest-cli.json ./
+# Copy source and config
+COPY tsconfig*.json ./
+COPY nest-cli.json ./
 COPY src ./src
 
-# Build the project (must exist in package.json)
+# Build the app
 RUN npm run build
 
 # ==============================================================================
-# Stage 2: Runtime image (minimal, production deps only)
+# Stage 2: Runtime image
 # ==============================================================================
-FROM node:18-alpine AS runtime
+FROM node:18-alpine
 
 WORKDIR /app
-
 ENV NODE_ENV=production
 
-# Copy package metadata
-COPY package*.json ./
-
 # Install only production dependencies
+COPY package*.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
-# Copy compiled JS from builder
+# Copy compiled code
 COPY --from=builder /app/dist ./dist
 
-# Expose API port
+# Environment defaults (can be overridden by ECS)
+ENV API_PORT=3000
+
 EXPOSE 3000
 
-# Entrypoint: NestJS bootstrap
 CMD ["node", "dist/main.js"]
