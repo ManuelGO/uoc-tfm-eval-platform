@@ -1,3 +1,6 @@
+// IMPORTANT: Import polyfills FIRST before any other modules
+import './polyfills';
+
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 
