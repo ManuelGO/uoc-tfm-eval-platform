@@ -19,24 +19,58 @@ import { UsersModule } from './users/users.module';
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
+        const databaseUrl = config.get<string>('DATABASE_URL');
+        const dbSsl = config.get<string>('DB_SSL');
+        const isSslEnabled = dbSsl === 'true';
+
+        const baseConfig = {
+          type: 'postgres' as const,
+          autoLoadEntities: true,
+          synchronize: true, // OK for dev
+        };
+
+        // RDS / production style using DATABASE_URL
+        if (databaseUrl) {
+          console.log(
+            '✅ DB config: Using DATABASE_URL with SSL:',
+            isSslEnabled,
+          );
+          return {
+            ...baseConfig,
+            url: databaseUrl,
+            ssl: isSslEnabled
+              ? { rejectUnauthorized: false } // OK for RDS, avoids CA issues
+              : undefined,
+          };
+        }
+
+        // Local/dev style using individual env vars
         const host = config.get<string>('DB_HOST');
         const port = Number(config.get<string>('DB_PORT') || 5432);
         const username = config.get<string>('DB_USER');
         const password = config.get<string>('DB_PASS');
         const database = config.get<string>('DB_NAME');
-        console.log('✅ DB config', { host, port, username, database });
+
+        console.log('✅ DB config', {
+          host,
+          port,
+          username,
+          database,
+          ssl: isSslEnabled,
+        });
+
         if (!host || !username || !database) {
           throw new Error('DB config is incomplete (DB_HOST/DB_USER/DB_NAME)');
         }
+
         return {
-          type: 'postgres',
+          ...baseConfig,
           host,
           port,
           username,
           password,
           database,
-          autoLoadEntities: true,
-          synchronize: true, // OK for dev
+          ssl: isSslEnabled ? { rejectUnauthorized: false } : undefined,
         };
       },
     }),
