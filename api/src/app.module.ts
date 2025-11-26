@@ -1,3 +1,4 @@
+// app.module.ts
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -17,30 +18,6 @@ import { UsersModule } from './users/users.module';
 
     TypeOrmModule.forRootAsync({
       useFactory: () => {
-        const rawDatabaseUrl = process.env.DATABASE_URL;
-        const hasDatabaseUrl =
-          typeof rawDatabaseUrl === 'string' &&
-          rawDatabaseUrl.trim().length > 0;
-
-        const sslEnabled = process.env.DB_SSL === 'true';
-
-        if (hasDatabaseUrl) {
-          const databaseUrl = rawDatabaseUrl.trim();
-
-          console.log('✅ Using DATABASE_URL for TypeORM connection', {
-            databaseUrl,
-            sslEnabled,
-          });
-
-          return {
-            type: 'postgres' as const,
-            url: databaseUrl,
-            ssl: sslEnabled ? { rejectUnauthorized: false } : undefined,
-            autoLoadEntities: true,
-            synchronize: true,
-          };
-        }
-
         const host = process.env.DB_HOST;
         const port = process.env.DB_PORT
           ? Number.parseInt(process.env.DB_PORT, 10)
@@ -48,8 +25,9 @@ import { UsersModule } from './users/users.module';
         const username = process.env.DB_USER;
         const password = process.env.DB_PASS;
         const database = process.env.DB_NAME;
+        const sslEnabled = process.env.DB_SSL === 'true';
 
-        console.log('✅ Using host-based DB config', {
+        console.log('✅ Using host-based DB config:', {
           host,
           port,
           username,
