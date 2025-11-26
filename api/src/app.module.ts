@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -17,46 +17,42 @@ import { UsersModule } from './users/users.module';
 
     // 🔗 DB connection
     TypeOrmModule.forRootAsync({
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => {
-        const databaseUrl = config.get<string>('DATABASE_URL');
-        const dbSsl = config.get<string>('DB_SSL');
-        const isSslEnabled = dbSsl === 'true';
+      useFactory: () => {
+        const rawDatabaseUrl = process.env.DATABASE_URL;
+        const hasDatabaseUrl =
+          typeof rawDatabaseUrl === 'string' &&
+          rawDatabaseUrl.trim().length > 0;
 
-        const baseConfig = {
-          type: 'postgres' as const,
-          autoLoadEntities: true,
-          synchronize: true, // OK for dev
-        };
+        const sslEnabled = process.env.DB_SSL === 'true';
 
-        // RDS / production style using DATABASE_URL
-        if (databaseUrl) {
-          console.log(
-            '✅ DB config: Using DATABASE_URL with SSL:',
-            isSslEnabled,
-          );
+        if (hasDatabaseUrl) {
+          const databaseUrl = rawDatabaseUrl.trim();
+
+          console.log('✅ Using DATABASE_URL for TypeORM connection');
+
           return {
-            ...baseConfig,
+            type: 'postgres' as const,
             url: databaseUrl,
-            ssl: isSslEnabled
-              ? { rejectUnauthorized: false } // OK for RDS, avoids CA issues
-              : undefined,
+            ssl: sslEnabled ? { rejectUnauthorized: false } : undefined,
+            autoLoadEntities: true,
+            synchronize: true,
           };
         }
 
-        // Local/dev style using individual env vars
-        const host = config.get<string>('DB_HOST');
-        const port = Number(config.get<string>('DB_PORT') || 5432);
-        const username = config.get<string>('DB_USER');
-        const password = config.get<string>('DB_PASS');
-        const database = config.get<string>('DB_NAME');
+        const host = process.env.DB_HOST;
+        const port = process.env.DB_PORT
+          ? Number.parseInt(process.env.DB_PORT, 10)
+          : 5432;
+        const username = process.env.DB_USER;
+        const password = process.env.DB_PASS;
+        const database = process.env.DB_NAME;
 
-        console.log('✅ DB config', {
+        console.log('✅ DB config (host-based)', {
           host,
           port,
           username,
           database,
-          ssl: isSslEnabled,
+          sslEnabled,
         });
 
         if (!host || !username || !database) {
@@ -64,13 +60,15 @@ import { UsersModule } from './users/users.module';
         }
 
         return {
-          ...baseConfig,
+          type: 'postgres' as const,
           host,
           port,
           username,
           password,
           database,
-          ssl: isSslEnabled ? { rejectUnauthorized: false } : undefined,
+          ssl: sslEnabled ? { rejectUnauthorized: false } : undefined,
+          autoLoadEntities: true,
+          synchronize: true,
         };
       },
     }),
