@@ -18,27 +18,6 @@ import { UsersModule } from './users/users.module';
     // 🔗 DB connection
     TypeOrmModule.forRootAsync({
       useFactory: () => {
-        const rawDatabaseUrl = process.env.DATABASE_URL;
-        const hasDatabaseUrl =
-          typeof rawDatabaseUrl === 'string' &&
-          rawDatabaseUrl.trim().length > 0;
-
-        const sslEnabled = process.env.DB_SSL === 'true';
-
-        if (hasDatabaseUrl) {
-          const databaseUrl = rawDatabaseUrl.trim();
-
-          console.log('✅ Using DATABASE_URL for TypeORM connection');
-
-          return {
-            type: 'postgres' as const,
-            url: databaseUrl,
-            ssl: sslEnabled ? { rejectUnauthorized: false } : undefined,
-            autoLoadEntities: true,
-            synchronize: true,
-          };
-        }
-
         const host = process.env.DB_HOST;
         const port = process.env.DB_PORT
           ? Number.parseInt(process.env.DB_PORT, 10)
@@ -46,8 +25,9 @@ import { UsersModule } from './users/users.module';
         const username = process.env.DB_USER;
         const password = process.env.DB_PASS;
         const database = process.env.DB_NAME;
+        const sslEnabled = process.env.DB_SSL === 'true';
 
-        console.log('✅ DB config (host-based)', {
+        console.log('✅ DB config:', {
           host,
           port,
           username,
