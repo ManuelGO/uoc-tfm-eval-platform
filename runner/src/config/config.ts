@@ -18,6 +18,7 @@ export interface RunnerConfig {
   dbUsername?: string;
   dbPassword?: string;
   dbName?: string;
+  dbSsl: boolean;
 
   // Runner Configuration
   runnerPollIntervalMs: number;
@@ -94,6 +95,7 @@ export function loadConfig(): RunnerConfig {
     dbUsername: process.env.DB_USERNAME,
     dbPassword: process.env.DB_PASSWORD,
     dbName: process.env.DB_NAME,
+    dbSsl: true,
 
     // Runner Configuration
     runnerPollIntervalMs: parseInt(process.env.RUNNER_POLL_INTERVAL_MS || '20000', 10),

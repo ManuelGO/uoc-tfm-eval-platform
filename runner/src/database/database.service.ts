@@ -54,6 +54,7 @@ export class DatabaseService {
       max: 10, // Maximum number of clients in the pool
       idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
       connectionTimeoutMillis: 10000, // Timeout for acquiring connection
+      ssl: config.dbSsl ? { rejectUnauthorized: false } : undefined, 
     });
 
     // Log pool errors
