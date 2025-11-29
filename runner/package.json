@@ -9,7 +9,8 @@
     "start": "node dist/main.js",
     "start:dev": "ts-node src/main.ts",
     "lint": "eslint \"src/**/*.ts\" --fix",
-    "test": "jest"
+    "test": "jest",
+    "generate:pit": "tsx src/tools/pit-generator.ts"
   },
   "keywords": [
     "runner",
@@ -37,6 +38,7 @@
     "rimraf": "^6.0.1",
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
+    "tsx": "^4.20.6",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.48.0"
   },
