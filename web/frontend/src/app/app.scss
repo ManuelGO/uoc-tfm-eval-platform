@@ -1,16 +1,17 @@
 .main-content {
-  max-width: 1200px;
-  margin: 2rem auto;
-  padding: 0 1rem;
-}
+  min-height: calc(100vh - 64px);
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+  // Remove all padding/margin for header view (full width)
+  app-header {
+    display: block;
+    margin: 0;
+    padding: 0;
+  }
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  line-height: 1.6;
+  // Add padding for routed content
+  router-outlet + * {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+  }
 }

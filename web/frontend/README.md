@@ -5,11 +5,13 @@ Angular application for the automatic code evaluation platform.
 ## Technology Stack
 
 - **Angular**: 20.3.12 (LTS)
+- **Angular Material**: 20.2.14 (Material 3 Design)
 - **TypeScript**: 5.8.3
 - **RxJS**: 7.8.2
 - **Build Tool**: Angular Build (esbuild-based)
 - **Testing**: Vitest 3.2.4
 - **Change Detection**: Zoneless (no Zone.js dependency)
+- **UI Theme**: Material 3 with Violet/Cyan palette
 
 ## Features
 
@@ -17,6 +19,7 @@ Angular application for the automatic code evaluation platform.
 ✅ **Lazy Loading Routes** - Optimized bundle sizes
 ✅ **Standalone Components** - Modern Angular architecture
 ✅ **Zoneless Change Detection** - Better performance without Zone.js
+✅ **Material 3 Design System** - Consistent, modern UI components
 ✅ **Type-Safe API Client** - Full TypeScript support
 ✅ **JWT Authentication** - Secure token management
 

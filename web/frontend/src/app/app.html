@@ -1,4 +1,8 @@
 <app-navbar></app-navbar>
 <main class="main-content">
-  <router-outlet></router-outlet>
+  @if (isLandingPage) {
+    <app-header></app-header>
+  } @else {
+    <router-outlet></router-outlet>
+  }
 </main>

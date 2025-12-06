@@ -1,0 +1,71 @@
+<div class="header-container">
+  <div class="hero-section">
+    <div class="hero-content">
+      <h1 class="hero-title">
+        <mat-icon class="hero-icon">school</mat-icon>
+        UOC TFM Evaluation Platform
+      </h1>
+      <p class="hero-subtitle">
+        Automatic code evaluation system for educational environments
+      </p>
+      <p class="hero-description">
+        Submit your Java projects and get instant feedback with automated JUnit testing.
+        Built with modern technologies for a seamless learning experience.
+      </p>
+
+      <div class="hero-actions">
+        <a mat-raised-button color="primary" routerLink="/auth/login" class="cta-button">
+          <mat-icon>login</mat-icon>
+          Get Started
+        </a>
+        <button mat-button class="learn-more">
+          <mat-icon>info</mat-icon>
+          Learn More
+        </button>
+      </div>
+
+      <div class="tech-stack">
+        <span class="tech-label">Built with:</span>
+        @for (tech of technologies; track tech) {
+          <mat-chip>{{ tech }}</mat-chip>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="features-section">
+    <h2 class="section-title">Key Features</h2>
+    <div class="features-grid">
+      @for (feature of features; track feature.title) {
+        <mat-card class="feature-card">
+          <mat-card-header>
+            <mat-icon mat-card-avatar class="feature-icon">{{ feature.icon }}</mat-icon>
+            <mat-card-title>{{ feature.title }}</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <p>{{ feature.description }}</p>
+          </mat-card-content>
+        </mat-card>
+      }
+    </div>
+  </div>
+
+  <div class="info-section">
+    <mat-card class="info-card">
+      <mat-card-content>
+        <div class="info-content">
+          <mat-icon class="info-icon">info</mat-icon>
+          <div class="info-text">
+            <h3>Master's Final Project (TFM)</h3>
+            <p>
+              This platform is part of a Master's Final Project developed for the
+              Universitat Oberta de Catalunya (UOC). It demonstrates the implementation
+              of a cloud-based automatic code evaluation system using modern web technologies
+              and AWS infrastructure.
+            </p>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>
