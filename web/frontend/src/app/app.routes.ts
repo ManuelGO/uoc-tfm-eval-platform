@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   {
@@ -16,23 +17,28 @@ export const routes: Routes = [
   },
   {
     path: 'home',
-    loadComponent: () => import('./dashboard/home/home').then(m => m.Home)
+    loadComponent: () => import('./dashboard/home/home').then(m => m.Home),
+    canActivate: [authGuard]
   },
   {
     path: 'submissions/upload/:pitId',
-    loadComponent: () => import('./submissions/upload/upload').then(m => m.Upload)
+    loadComponent: () => import('./submissions/upload/upload').then(m => m.Upload),
+    canActivate: [authGuard]
   },
   {
     path: 'submissions/:id/status',
-    loadComponent: () => import('./submissions/status/status').then(m => m.Status)
+    loadComponent: () => import('./submissions/status/status').then(m => m.Status),
+    canActivate: [authGuard]
   },
   {
     path: 'pits/attach',
-    loadComponent: () => import('./pits/attach/attach').then(m => m.Attach)
+    loadComponent: () => import('./pits/attach/attach').then(m => m.Attach),
+    canActivate: [authGuard]
   },
   {
     path: 'pits',
-    loadComponent: () => import('./pits/list/list').then(m => m.List)
+    loadComponent: () => import('./pits/list/list').then(m => m.List),
+    canActivate: [authGuard]
   },
   {
     path: '**',

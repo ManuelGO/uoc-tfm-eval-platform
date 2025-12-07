@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { APP_CONFIG, AppConfig } from '../../config/app-config';
+import { AuthService } from './auth.service';
 
 @Injectable({
   providedIn: 'root',
@@ -9,6 +10,7 @@ import { APP_CONFIG, AppConfig } from '../../config/app-config';
 export class Api {
   private readonly config: AppConfig = inject(APP_CONFIG);
   private readonly http = inject(HttpClient);
+  private readonly authService = inject(AuthService);
 
   private get baseUrl(): string {
     return this.config.apiBaseUrl;
@@ -20,7 +22,7 @@ export class Api {
     });
 
     if (includeAuth) {
-      const token = this.getAuthToken();
+      const token = this.authService.getToken();
       if (token) {
         headers = headers.set('Authorization', `Bearer ${token}`);
       }
@@ -29,16 +31,18 @@ export class Api {
     return headers;
   }
 
-  private getAuthToken(): string | null {
-    return localStorage.getItem('authToken');
-  }
-
+  /**
+   * @deprecated Use AuthService.setToken() instead
+   */
   setAuthToken(token: string): void {
-    localStorage.setItem('authToken', token);
+    this.authService.setToken(token);
   }
 
+  /**
+   * @deprecated Use AuthService.clearToken() instead
+   */
   clearAuthToken(): void {
-    localStorage.removeItem('authToken');
+    this.authService.clearToken();
   }
 
   // Generic HTTP methods

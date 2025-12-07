@@ -13,6 +13,6 @@ export class App {
   constructor(private router: Router) {}
 
   get isLandingPage(): boolean {
-    return this.router.url === '/' || this.router.url === '/auth/login';
+    return this.router.url === '/';
   }
 }

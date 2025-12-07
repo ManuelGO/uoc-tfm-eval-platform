@@ -1,1 +1,82 @@
-<p>login works!</p>
+<div class="login-container">
+  <mat-card class="login-card">
+    <mat-card-header>
+      <mat-card-title>
+        <div class="login-title">
+          <mat-icon class="login-icon">lock</mat-icon>
+          <span>Welcome Back</span>
+        </div>
+      </mat-card-title>
+      <mat-card-subtitle>
+        Sign in with your email to continue
+      </mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      @if (!emailSent()) {
+        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Email Address</mat-label>
+            <input
+              matInput
+              type="email"
+              formControlName="email"
+              placeholder="your.email@example.com"
+              autocomplete="email"
+            />
+            <mat-icon matPrefix>email</mat-icon>
+            @if (emailControl.invalid && emailControl.touched) {
+              <mat-error>{{ getEmailErrorMessage() }}</mat-error>
+            }
+          </mat-form-field>
+
+          <button
+            mat-raised-button
+            color="primary"
+            type="submit"
+            class="full-width submit-button"
+            [disabled]="loginForm.invalid || loading()"
+          >
+            @if (loading()) {
+              <mat-spinner diameter="20" class="button-spinner"></mat-spinner>
+              <span>Sending...</span>
+            } @else {
+              <ng-container>
+                <mat-icon>send</mat-icon>
+                <span>Send Magic Link</span>
+              </ng-container>
+            }
+          </button>
+        </form>
+
+        <div class="login-info">
+          <mat-icon>info</mat-icon>
+          <p>
+            We'll send you a secure login link to your email. No password needed!
+          </p>
+        </div>
+      } @else {
+        <div class="success-message">
+          <mat-icon class="success-icon">mark_email_read</mat-icon>
+          <h3>Check your email!</h3>
+          <p>
+            We've sent a magic link to <strong>{{ emailControl.value }}</strong>
+          </p>
+          <p class="help-text">
+            Click the link in the email to sign in. The link will expire in 15 minutes.
+          </p>
+          <button
+            mat-stroked-button
+            color="primary"
+            type="button"
+            (click)="emailSent.set(false)"
+            class="resend-button"
+          >
+            <mat-icon>refresh</mat-icon>
+            <span>Send Another Link</span>
+          </button>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+</div>
