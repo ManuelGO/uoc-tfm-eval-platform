@@ -29,7 +29,7 @@ export class SesService {
             <p>Hello!</p>
               <p>Click the link below to log in:</p>
               <p><a href="${url}">${url}</a></p>
-              <p>This link is valid for 15 minutes.</p>
+              <p>This link is valid for 24 hours.</p>
             `,
           },
         },

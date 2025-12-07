@@ -5,7 +5,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindOptionsWhere, Repository } from 'typeorm';
 
 import { Submission, SubmissionStatus } from './submission.entity';
 import { Pit } from '../pits/pit.entity';
@@ -152,5 +152,31 @@ export class SubmissionsService {
       createdAt: submission.createdAt,
       updatedAt: submission.updatedAt,
     };
+  }
+
+  async listUserSubmissions(userId: string, pitId?: string) {
+    // 1) WHERE fuertemente tipado
+    const where: FindOptionsWhere<Submission> = {
+      user: { id: userId },
+      ...(pitId ? { pit: { id: pitId } as unknown as Pit } : {}),
+    };
+
+    // 2) Resultado tipado explícitamente como Submission[]
+    const submissions: Submission[] = await this.submissionsRepo.find({
+      where,
+      relations: ['pit'],
+      order: { createdAt: 'DESC' },
+    });
+
+    // 3) Map con tipo explícito en el callback
+    return submissions.map((s: Submission) => ({
+      submissionId: s.id,
+      pitId: s.pit ? s.pit.id : null,
+      pitTitle: s.pit ? s.pit.title : null,
+      status: s.status,
+      score: s.score,
+      createdAt: s.createdAt,
+      updatedAt: s.updatedAt,
+    }));
   }
 }

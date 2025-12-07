@@ -1,1 +1,185 @@
-<p>home works!</p>
+<div class="dashboard-container">
+  <!-- Header Section -->
+  <div class="dashboard-header">
+    <div class="welcome-section">
+      <h1 class="dashboard-title">
+        <mat-icon class="title-icon">dashboard</mat-icon>
+        Dashboard
+      </h1>
+      @if (user()) {
+        <p class="welcome-text">Welcome back, <strong>{{ user()!.email }}</strong></p>
+      }
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  @if (loading()) {
+    <div class="loading-container">
+      <mat-spinner></mat-spinner>
+      <p>Loading dashboard data...</p>
+    </div>
+  }
+
+  <!-- Error State -->
+  @if (error() && !loading()) {
+    <mat-card class="error-card">
+      <mat-card-content>
+        <div class="error-content">
+          <mat-icon class="error-icon">error</mat-icon>
+          <p>{{ error() }}</p>
+          <button mat-raised-button color="primary" (click)="retry()">
+            <mat-icon>refresh</mat-icon>
+            Retry
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  <!-- Dashboard Content -->
+  @if (!loading() && !error()) {
+    <!-- Active PITs Section -->
+    <section class="pits-section">
+      <div class="section-header">
+        <h2 class="section-title">
+          <mat-icon>assignment</mat-icon>
+          Active PITs
+        </h2>
+        <button mat-button color="primary" routerLink="/pits/attach">
+          <mat-icon>add</mat-icon>
+          Attach PIT
+        </button>
+      </div>
+
+      @if (pits().length === 0) {
+        <mat-card class="empty-state-card">
+          <mat-card-content>
+            <div class="empty-state">
+              <mat-icon class="empty-icon">inbox</mat-icon>
+              <h3>No PITs attached yet</h3>
+              <p>Get started by attaching a PIT using the code provided by your professor.</p>
+              <button mat-raised-button color="primary" routerLink="/pits/attach">
+                <mat-icon>add</mat-icon>
+                Attach Your First PIT
+              </button>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      } @else {
+        <div class="pits-grid">
+          @for (pit of pits(); track pit.id) {
+            <mat-card class="pit-card">
+              <mat-card-header>
+                <mat-icon mat-card-avatar class="pit-icon">assignment</mat-icon>
+                <mat-card-title>{{ pit.title }}</mat-card-title>
+                @if (pit.description) {
+                  <mat-card-subtitle>{{ pit.description }}</mat-card-subtitle>
+                }
+              </mat-card-header>
+              <mat-card-content>
+                @if (pit.createdAt) {
+                  <p class="pit-date">
+                    <mat-icon class="inline-icon">calendar_today</mat-icon>
+                    {{ pit.createdAt | date:'medium' }}
+                  </p>
+                }
+              </mat-card-content>
+              <mat-card-actions>
+                <button mat-button color="primary" [routerLink]="['/submissions/upload', pit.id]">
+                  <mat-icon>cloud_upload</mat-icon>
+                  Upload Solution
+                </button>
+              </mat-card-actions>
+            </mat-card>
+          }
+        </div>
+      }
+    </section>
+
+    <!-- Recent Submissions Section -->
+    <section class="submissions-section">
+      <div class="section-header">
+        <h2 class="section-title">
+          <mat-icon>history</mat-icon>
+          Recent Submissions
+        </h2>
+        <button mat-button color="primary" routerLink="/pits">
+          <mat-icon>list</mat-icon>
+          View All PITs
+        </button>
+      </div>
+
+      @if (submissions().length === 0) {
+        <mat-card class="empty-state-card">
+          <mat-card-content>
+            <div class="empty-state">
+              <mat-icon class="empty-icon">upload_file</mat-icon>
+              <h3>No submissions yet</h3>
+              <p>Start by uploading a solution to one of your active PITs.</p>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      } @else {
+        <mat-card class="submissions-card">
+          <mat-card-content>
+            <table mat-table [dataSource]="submissions()" class="submissions-table">
+              <!-- PIT Column -->
+              <ng-container matColumnDef="pit">
+                <th mat-header-cell *matHeaderCellDef>PIT</th>
+                <td mat-cell *matCellDef="let submission">
+                  {{ submission.pitTitle || submission.pitId }}
+                </td>
+              </ng-container>
+
+              <!-- Status Column -->
+              <ng-container matColumnDef="status">
+                <th mat-header-cell *matHeaderCellDef>Status</th>
+                <td mat-cell *matCellDef="let submission">
+                  <mat-chip [color]="getStatusColor(submission.status)" [highlighted]="true">
+                    <mat-icon class="status-icon">{{ getStatusIcon(submission.status) }}</mat-icon>
+                    {{ submission.status }}
+                  </mat-chip>
+                </td>
+              </ng-container>
+
+              <!-- Score Column -->
+              <ng-container matColumnDef="score">
+                <th mat-header-cell *matHeaderCellDef>Score</th>
+                <td mat-cell *matCellDef="let submission">
+                  @if (submission.score !== undefined && submission.score !== null) {
+                    <span class="score-badge" [class.score-high]="submission.score >= 80" [class.score-medium]="submission.score >= 50 && submission.score < 80" [class.score-low]="submission.score < 50">
+                      {{ submission.score }}%
+                    </span>
+                  } @else {
+                    <span class="text-muted">—</span>
+                  }
+                </td>
+              </ng-container>
+
+              <!-- Submitted At Column -->
+              <ng-container matColumnDef="submittedAt">
+                <th mat-header-cell *matHeaderCellDef>Submitted</th>
+                <td mat-cell *matCellDef="let submission">
+                  {{ submission.submittedAt | date:'short' }}
+                </td>
+              </ng-container>
+
+              <!-- Actions Column -->
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef>Actions</th>
+                <td mat-cell *matCellDef="let submission">
+                  <button mat-icon-button color="primary" [routerLink]="['/submissions', submission.id, 'status']" matTooltip="View Details">
+                    <mat-icon>visibility</mat-icon>
+                  </button>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="submissionsColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: submissionsColumns;" class="submission-row"></tr>
+            </table>
+          </mat-card-content>
+        </mat-card>
+      }
+    </section>
+  }
+</div>

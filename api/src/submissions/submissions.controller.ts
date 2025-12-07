@@ -6,6 +6,7 @@ import {
   Req,
   Get,
   Param,
+  Query,
 } from '@nestjs/common';
 import { SubmissionsService } from './submissions.service';
 import { RequestUploadDto } from './dto/request-upload.dto';
@@ -51,5 +52,18 @@ export class SubmissionsController {
   @Get('feedback/:id')
   getFeedback(@Param('id') id: string, @Req() req: { user: { id: string } }) {
     return this.service.getFeedbackForUser(id, req.user.id);
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('mine')
+  getMySubmissions(
+    @Req() req: AuthenticatedRequest,
+    @Query('pitId') pitId?: string,
+  ) {
+    if (!req.user?.id) {
+      throw new Error('Missing authenticated user');
+    }
+
+    return this.service.listUserSubmissions(req.user.id, pitId);
   }
 }
