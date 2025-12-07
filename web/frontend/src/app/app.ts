@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
-import { RouterOutlet, Router } from '@angular/router';
+import { Component, signal } from '@angular/core';
+import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs/operators';
 import { Navbar } from './core/components/navbar/navbar';
 import { Header } from './core/components/header/header';
 
@@ -10,9 +11,23 @@ import { Header } from './core/components/header/header';
   styleUrl: './app.scss'
 })
 export class App {
-  constructor(private router: Router) {}
+  isLandingPage = signal(false);
 
-  get isLandingPage(): boolean {
-    return this.router.url === '/';
+  constructor(private router: Router) {
+    // Set initial value based on current URL
+    this.updateLandingPageState(this.router.url);
+
+    // Listen to navigation events to update state
+    this.router.events
+      .pipe(filter(event => event instanceof NavigationEnd))
+      .subscribe((event: NavigationEnd) => {
+        this.updateLandingPageState(event.urlAfterRedirects);
+      });
+  }
+
+  private updateLandingPageState(url: string): void {
+    // Remove query params and fragments for comparison
+    const path = url.split('?')[0].split('#')[0];
+    this.isLandingPage.set(path === '/' || path === '');
   }
 }
