@@ -16,9 +16,6 @@ import { AuthGuard } from './auth.guard';
   ],
   providers: [AuthService, SesService, AuthGuard],
   controllers: [AuthController],
-  exports: [
-    AuthGuard,
-    JwtModule, // <- exportamos también JwtModule para que JwtService esté disponible aguas abajo
-  ],
+  exports: [AuthGuard, JwtModule, UsersModule],
 })
 export class AuthModule {}

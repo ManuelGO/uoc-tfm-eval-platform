@@ -54,7 +54,7 @@ export class SubmissionsService {
     });
 
     const uploadUrl = await getSignedUrl(this.s3, command, {
-      expiresIn: 300, // 5 minutos
+      expiresIn: 3600, // 1hr
     });
 
     return { uploadUrl, fileKey: s3Key };

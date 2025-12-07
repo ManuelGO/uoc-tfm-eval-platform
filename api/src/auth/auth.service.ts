@@ -6,7 +6,7 @@ export class AuthService {
   constructor(private jwt: JwtService) {}
 
   generateLoginToken(email: string) {
-    return this.jwt.sign({ email }, { expiresIn: '15m' });
+    return this.jwt.sign({ email }, { expiresIn: '24h' });
   }
 
   verifyLoginToken(token: string): { email: string } {
