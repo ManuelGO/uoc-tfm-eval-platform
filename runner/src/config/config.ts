@@ -57,13 +57,13 @@ function validateRequiredVariables(): void {
   const hasIndividualDbVars = !!(
     process.env.DB_HOST &&
     process.env.DB_PORT &&
-    process.env.DB_USERNAME &&
-    process.env.DB_PASSWORD &&
+    (process.env.DB_USER || process.env.DB_USERNAME) &&
+    (process.env.DB_PASS || process.env.DB_PASSWORD) &&
     process.env.DB_NAME
   );
 
   if (!hasDatabaseUrl && !hasIndividualDbVars) {
-    missing.push('DATABASE_URL or (DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_NAME)');
+    missing.push('DATABASE_URL or (DB_HOST, DB_PORT, DB_USER/DB_USERNAME, DB_PASS/DB_PASSWORD, DB_NAME)');
   }
 
   if (missing.length > 0) {
@@ -92,8 +92,8 @@ export function loadConfig(): RunnerConfig {
     databaseUrl: process.env.DATABASE_URL,
     dbHost: process.env.DB_HOST,
     dbPort: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : undefined,
-    dbUsername: process.env.DB_USERNAME,
-    dbPassword: process.env.DB_PASSWORD,
+    dbUsername: process.env.DB_USER || process.env.DB_USERNAME,
+    dbPassword: process.env.DB_PASS || process.env.DB_PASSWORD,
     dbName: process.env.DB_NAME,
     dbSsl: true,
 

@@ -10,7 +10,6 @@ export class PitsController {
   // GET /pits
   @Get()
   async findAll() {
-    // MVP: devolver todos los PITs activos
     return this.pitsService.findAll();
   }
 

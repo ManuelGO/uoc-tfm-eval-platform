@@ -1,6 +1,5 @@
-import { Pool, type PoolClient } from 'pg';
+import { Pool, type PoolClient, type PoolConfig } from 'pg';
 import type { RunnerConfig } from '../config/config.js';
-import { getDatabaseConnectionString } from '../config/config.js';
 
 /**
  * Submission status values
@@ -45,24 +44,74 @@ export interface SubmissionResult {
 export class DatabaseService {
   private pool: Pool;
 
-  constructor(config: RunnerConfig) {
-    const connectionString = getDatabaseConnectionString(config);
+constructor(config: RunnerConfig) {
+    // Parse connection parameters
+    // Using individual parameters instead of connectionString ensures SSL config is respected
+    let host: string;
+    let port: number;
+    let database: string;
+    let user: string;
+    let password: string;
 
-    this.pool = new Pool({
-      connectionString,
+    if (config.databaseUrl) {
+      // Parse DATABASE_URL (format: postgresql://user:pass@host:port/db?sslmode=require)
+      const url = new URL(config.databaseUrl);
+      host = url.hostname;
+      port = parseInt(url.port, 10) || 5432;
+      database = url.pathname.slice(1); // Remove leading /
+      user = url.username;
+      password = decodeURIComponent(url.password);
+    } else {
+      // Use individual config values
+      host = config.dbHost!;
+      port = config.dbPort!;
+      database = config.dbName!;
+      user = config.dbUsername!;
+      password = config.dbPassword!;
+    }
+
+    // Determine SSL configuration
+    // AWS RDS and other managed databases often require SSL with self-signed certificates
+    const useSsl = config.dbSsl || (config.databaseUrl && config.databaseUrl.includes('sslmode=require'));
+
+    // Build pool configuration using individual parameters (NOT connectionString)
+    // This is critical for SSL to work correctly with self-signed certificates
+    const poolConfig: PoolConfig = {
+      host,
+      port,
+      database,
+      user,
+      password,
       // Connection pool settings
       max: 10, // Maximum number of clients in the pool
       idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
       connectionTimeoutMillis: 10000, // Timeout for acquiring connection
-      ssl: config.dbSsl ? { rejectUnauthorized: false } : undefined, 
-    });
+    };
+
+    // Configure SSL if needed
+    // rejectUnauthorized: false allows self-signed certificates (common in AWS RDS)
+    if (useSsl) {
+      poolConfig.ssl = {
+        rejectUnauthorized: false,
+      };
+    }
+
+    this.pool = new Pool(poolConfig);
 
     // Log pool errors
     this.pool.on('error', (err) => {
       console.error('[DatabaseService] Unexpected pool error', err);
     });
 
-    console.log('[DatabaseService] Database pool initialized');
+    console.log('[DatabaseService] Database pool initialized', {
+      host,
+      port,
+      database,
+      user,
+      configDbSsl: config.dbSsl,
+      useSsl,
+      sslConfig: poolConfig.ssl ? 'enabled (rejectUnauthorized: false)' : 'disabled',
+    });
   }
 
   /**

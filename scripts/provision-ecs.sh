@@ -44,7 +44,6 @@ DB_USER="${DB_USER:-postgres}"
 DB_PASS="${DB_PASS:-TFMdb#SecureKey9}"
 DB_NAME="${DB_NAME:-tfmdb}"
 DB_SSL="${DB_SSL:-true}"
-DB_URL="${DB_URL:-postgresql://postgres:TFMdb%23SecureKey9@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=require}"
 
 # ====== PRECHECKS ==============================================================
 command -v aws >/dev/null || { echo "AWS CLI not found"; exit 1; }
@@ -216,7 +215,12 @@ cat > /tmp/worker-task.json <<JSON
         {"name":"AWS_REGION","value":"${REGION}"},
         {"name":"AWS_S3_BUCKET","value":"${S3_BUCKET}"},
         {"name":"AWS_SQS_QUEUE_URL","value":"${SQS_URL}"},
-        {"name":"DATABASE_URL","value":"${DB_URL}"}
+        {"name":"DB_HOST","value":"${DB_HOST}"},
+        {"name":"DB_PORT","value":"${DB_PORT}"},
+        {"name":"DB_USER","value":"${DB_USER}"},
+        {"name":"DB_PASS","value":"${DB_PASS}"},
+        {"name":"DB_NAME","value":"${DB_NAME}"},
+        {"name":"DB_SSL","value":"${DB_SSL}"}
       ],
       "logConfiguration": {
         "logDriver": "awslogs",
