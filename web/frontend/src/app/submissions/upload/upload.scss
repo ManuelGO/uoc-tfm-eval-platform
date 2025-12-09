@@ -1,0 +1,256 @@
+.upload-container {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 2rem;
+}
+
+.upload-card {
+  .upload-icon {
+    background: linear-gradient(135deg, var(--mat-sys-primary) 0%, var(--mat-sys-tertiary) 100%);
+    color: var(--mat-sys-on-primary);
+  }
+}
+
+.upload-zone {
+  margin: 2rem 0;
+}
+
+.drop-zone {
+  border: 2px dashed var(--mat-sys-outline);
+  border-radius: 12px;
+  padding: 3rem 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover:not(.disabled) {
+    border-color: var(--mat-sys-primary);
+    background-color: var(--mat-sys-surface-container-low);
+  }
+
+  &.dragging {
+    border-color: var(--mat-sys-primary);
+    border-width: 3px;
+    background-color: var(--mat-sys-primary-container);
+    transform: scale(1.02);
+
+    .drop-icon {
+      transform: scale(1.1);
+      animation: bounce 0.5s ease-in-out;
+    }
+
+    h3 {
+      color: var(--mat-sys-primary);
+    }
+  }
+
+  &.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .drop-icon {
+    font-size: 4rem;
+    width: 4rem;
+    height: 4rem;
+    color: var(--mat-sys-primary);
+    margin-bottom: 1rem;
+  }
+
+  h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.25rem;
+    color: var(--mat-sys-on-surface);
+  }
+
+  p {
+    margin: 0.25rem 0;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  .help-text {
+    font-size: 0.875rem;
+    color: var(--mat-sys-outline);
+  }
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.file-info {
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+  padding: 1.5rem;
+
+  .file-details {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+
+    .file-icon {
+      font-size: 2.5rem;
+      width: 2.5rem;
+      height: 2.5rem;
+      color: var(--mat-sys-primary);
+    }
+
+    .file-text {
+      h4 {
+        margin: 0 0 0.25rem 0;
+        font-size: 1rem;
+        font-weight: 500;
+        color: var(--mat-sys-on-surface);
+      }
+
+      p {
+        margin: 0;
+        font-size: 0.875rem;
+        color: var(--mat-sys-on-surface-variant);
+      }
+    }
+  }
+
+  .file-actions {
+    display: flex;
+    gap: 1rem;
+  }
+}
+
+.requirements {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background-color: var(--mat-sys-surface-container-low);
+  border-radius: 8px;
+
+  h4 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0 0 1rem 0;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--mat-sys-on-surface);
+
+    mat-icon {
+      color: var(--mat-sys-primary);
+    }
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 1.5rem;
+
+    li {
+      margin-bottom: 0.5rem;
+      color: var(--mat-sys-on-surface-variant);
+    }
+  }
+}
+
+.uploading-state,
+.success-state,
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 3rem 2rem;
+  text-align: center;
+
+  mat-icon {
+    font-size: 4rem;
+    width: 4rem;
+    height: 4rem;
+    margin-bottom: 1rem;
+  }
+
+  h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.5rem;
+    font-weight: 500;
+  }
+
+  p {
+    margin: 0.25rem 0;
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.uploading-icon {
+  color: var(--mat-sys-primary);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+mat-progress-bar {
+  width: 100%;
+  max-width: 400px;
+  margin: 1.5rem 0 0.5rem 0;
+}
+
+.progress-text {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: var(--mat-sys-primary);
+}
+
+.success-icon {
+  color: var(--mat-sys-primary);
+}
+
+.submission-id {
+  margin: 1rem 0 !important;
+  padding: 0.75rem;
+  background-color: var(--mat-sys-surface-container);
+  border-radius: 4px;
+  font-family: monospace;
+
+  strong {
+    color: var(--mat-sys-primary);
+  }
+}
+
+.success-actions,
+.error-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.error-icon {
+  color: var(--mat-sys-error);
+}
+
+.error-message {
+  padding: 1rem;
+  background-color: rgba(var(--mat-sys-error-rgb), 0.1);
+  border-left: 3px solid var(--mat-sys-error);
+  border-radius: 4px;
+  color: var(--mat-sys-error);
+}
+
+@media (max-width: 600px) {
+  .upload-container {
+    padding: 1rem;
+  }
+
+  .file-actions,
+  .success-actions,
+  .error-actions {
+    flex-direction: column;
+    width: 100%;
+
+    button {
+      width: 100%;
+    }
+  }
+}

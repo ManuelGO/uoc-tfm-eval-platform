@@ -9,6 +9,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { forkJoin } from 'rxjs';
 import { catchError, finalize } from 'rxjs/operators';
 import { of } from 'rxjs';
@@ -23,13 +24,13 @@ interface Pit {
 }
 
 interface Submission {
-  id: string;
+  submissionId: string;
   pitId: string;
   pitTitle?: string;
   status: 'PENDING' | 'RUNNING' | 'DONE' | 'ERROR';
-  score?: number;
-  submittedAt: string;
-  updatedAt?: string;
+  score?: number | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 @Component({
@@ -51,6 +52,7 @@ interface Submission {
 export class Home implements OnInit {
   private readonly api = inject(Api);
   private readonly authService = inject(AuthService);
+  private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
 
   user = signal<User | null>(null);
@@ -58,8 +60,9 @@ export class Home implements OnInit {
   submissions = signal<Submission[]>([]);
   loading = signal(true);
   error = signal<string | null>(null);
+  deletingSubmissions = signal<Set<string>>(new Set());
 
-  submissionsColumns: string[] = ['pit', 'status', 'score', 'submittedAt', 'actions'];
+  submissionsColumns: string[] = ['pit', 'status', 'score', 'createdAt', 'actions'];
 
   ngOnInit(): void {
     this.loadUserData();
@@ -135,5 +138,50 @@ export class Home implements OnInit {
 
   retry(): void {
     this.loadDashboardData();
+  }
+
+  deleteSubmission(submissionId: string): void {
+    if (!confirm('Are you sure you want to delete this submission?')) {
+      return;
+    }
+
+    // Add to deleting set
+    const deleting = new Set(this.deletingSubmissions());
+    deleting.add(submissionId);
+    this.deletingSubmissions.set(deleting);
+
+    this.api.deleteSubmission(submissionId)
+      .pipe(
+        catchError((err) => {
+          console.error('Error deleting submission:', err);
+          this.snackBar.open('Failed to delete submission. Please try again.', 'Close', {
+            duration: 4000,
+            panelClass: ['error-snackbar'],
+          });
+          return of(null);
+        }),
+        finalize(() => {
+          // Remove from deleting set
+          const deleting = new Set(this.deletingSubmissions());
+          deleting.delete(submissionId);
+          this.deletingSubmissions.set(deleting);
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((result) => {
+        if (result) {
+          // Remove from local list
+          const updatedSubmissions = this.submissions().filter(s => s.submissionId !== submissionId);
+          this.submissions.set(updatedSubmissions);
+
+          this.snackBar.open('Submission deleted successfully', 'Close', {
+            duration: 3000,
+          });
+        }
+      });
+  }
+
+  isDeleting(submissionId: string): boolean {
+    return this.deletingSubmissions().has(submissionId);
   }
 }

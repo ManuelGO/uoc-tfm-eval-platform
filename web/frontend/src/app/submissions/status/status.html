@@ -1,1 +1,192 @@
-<p>status works!</p>
+<div class="status-container">
+  <!-- Loading State -->
+  @if (loading()) {
+    <div class="loading-container">
+      <mat-spinner></mat-spinner>
+      <p>Loading submission...</p>
+    </div>
+  }
+
+  <!-- Error State -->
+  @if (error() && !loading()) {
+    <mat-card class="error-card">
+      <mat-card-content>
+        <div class="error-content">
+          <mat-icon class="error-icon">error</mat-icon>
+          <p>{{ error() }}</p>
+          <button mat-raised-button color="primary" (click)="retry()">
+            <mat-icon>refresh</mat-icon>
+            Retry
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  <!-- Submission Details -->
+  @if (submission() && !loading()) {
+    <mat-card class="status-card">
+      <mat-card-header>
+        <mat-icon mat-card-avatar class="status-icon">assessment</mat-icon>
+        <mat-card-title>Submission Details</mat-card-title>
+        <mat-card-subtitle>ID: {{ submission()!.submissionId }}</mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content>
+        <div class="status-info">
+          <!-- Status Section -->
+          <div class="info-section">
+            <h3>Status</h3>
+            <div class="status-badge">
+              <mat-chip [color]="getStatusColor(submission()!.status)" [highlighted]="true">
+                <mat-icon class="chip-icon">{{ getStatusIcon(submission()!.status) }}</mat-icon>
+                {{ submission()!.status }}
+              </mat-chip>
+              @if (autoRefreshing()) {
+                <span class="auto-refresh-indicator">
+                  <mat-icon>autorenew</mat-icon>
+                  Auto-refreshing...
+                </span>
+              }
+            </div>
+          </div>
+
+          <!-- Score Section -->
+          @if (submission()!.score !== undefined && submission()!.score !== null) {
+            <div class="info-section">
+              <h3>Score</h3>
+              <div class="score-display" [ngClass]="getScoreColor(submission()!.score)">
+                {{ submission()!.score }}%
+              </div>
+            </div>
+          }
+
+          <!-- Dates Section -->
+          <div class="info-section">
+            <h3>Timeline</h3>
+            <div class="timeline-items">
+              <div class="timeline-item">
+                <mat-icon>schedule</mat-icon>
+                <div>
+                  <strong>Submitted:</strong>
+                  {{ submission()!.createdAt | date:'medium' }}
+                </div>
+              </div>
+              @if (submission()!.updatedAt) {
+                <div class="timeline-item">
+                  <mat-icon>update</mat-icon>
+                  <div>
+                    <strong>Last Updated:</strong>
+                    {{ submission()!.updatedAt | date:'medium' }}
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- PIT Info -->
+          @if (submission()!.pitTitle || submission()!.pitId) {
+            <div class="info-section">
+              <h3>PIT</h3>
+              <p>{{ submission()!.pitTitle || submission()!.pitId }}</p>
+            </div>
+          }
+
+          <!-- Feedback Section -->
+          @if (submission()!.feedback) {
+            <div class="info-section">
+              <h3>Feedback</h3>
+              <div class="feedback-box">
+                @if (submission()!.feedback?.totalTests !== undefined) {
+                  <div class="feedback-item">
+                    <strong>Tests:</strong>
+                    <span class="test-results">
+                      {{ submission()!.feedback?.passedTests }}/{{ submission()!.feedback?.totalTests }} passed
+                      @if (submission()!.feedback?.failedTests! > 0) {
+                        <span class="failed-tests">({{ submission()!.feedback?.failedTests }} failed)</span>
+                      }
+                    </span>
+                  </div>
+                }
+                @if (submission()!.feedback?.durationMs !== undefined) {
+                  <div class="feedback-item">
+                    <strong>Duration:</strong> {{ submission()!.feedback?.durationMs }}ms
+                  </div>
+                }
+                @if (submission()!.feedback?.exitCode !== undefined) {
+                  <div class="feedback-item">
+                    <strong>Exit Code:</strong> {{ submission()!.feedback?.exitCode }}
+                  </div>
+                }
+                @if (submission()!.feedback?.timedOut !== undefined) {
+                  <div class="feedback-item">
+                    <strong>Timed Out:</strong> {{ submission()!.feedback?.timedOut ? 'Yes' : 'No' }}
+                  </div>
+                }
+                @if (submission()!.feedback?.details) {
+                  <div class="feedback-item details">
+                    <strong>Details:</strong>
+                    <pre>{{ submission()!.feedback?.details }}</pre>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Logs Section -->
+          @if (submission()!.logsS3Key) {
+            <div class="info-section">
+              <h3>Execution Logs</h3>
+              <p class="logs-info">Logs are available in S3</p>
+              <p class="logs-key">Key: <code>{{ submission()!.logsS3Key }}</code></p>
+            </div>
+          }
+
+          <!-- Status Messages -->
+          @if (submission()!.status === 'PENDING') {
+            <div class="status-message pending">
+              <mat-icon>info</mat-icon>
+              <p>Your submission is queued for processing. This usually takes a few moments.</p>
+            </div>
+          }
+
+          @if (submission()!.status === 'RUNNING') {
+            <div class="status-message running">
+              <mat-icon>hourglass_empty</mat-icon>
+              <p>Your submission is currently being evaluated. Tests are running...</p>
+            </div>
+          }
+
+          @if (submission()!.status === 'ERROR') {
+            <div class="status-message error">
+              <mat-icon>error</mat-icon>
+              <p>There was an error processing your submission. Please check the logs for details.</p>
+            </div>
+          }
+
+          @if (submission()!.status === 'DONE') {
+            <div class="status-message success">
+              <mat-icon>check_circle</mat-icon>
+              <p>Evaluation complete! Check your score and feedback above.</p>
+            </div>
+          }
+        </div>
+      </mat-card-content>
+
+      <mat-card-actions>
+        <button mat-button routerLink="/home">
+          <mat-icon>home</mat-icon>
+          Dashboard
+        </button>
+        <button mat-button [routerLink]="['/submissions/upload', submission()!.pitId]">
+          <mat-icon>cloud_upload</mat-icon>
+          Upload Again
+        </button>
+        <button mat-button (click)="retry()">
+          <mat-icon>refresh</mat-icon>
+          Refresh
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  }
+</div>

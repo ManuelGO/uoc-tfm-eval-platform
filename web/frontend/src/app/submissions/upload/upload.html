@@ -1,1 +1,133 @@
-<p>upload works!</p>
+<div class="upload-container">
+  <mat-card class="upload-card">
+    <mat-card-header>
+      <mat-icon mat-card-avatar class="upload-icon">cloud_upload</mat-icon>
+      <mat-card-title>Upload Submission</mat-card-title>
+      <mat-card-subtitle>Submit your Maven project as a ZIP file</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <!-- File Selection State -->
+      @if (currentStep() === 'select') {
+        <div class="upload-zone">
+          <input
+            type="file"
+            accept=".zip"
+            (change)="onFileSelected($event)"
+            #fileInput
+            hidden
+          />
+
+          @if (!selectedFile()) {
+            <div
+              class="drop-zone"
+              [class.dragging]="isDragging()"
+              [class.disabled]="uploading()"
+              (click)="!uploading() && fileInput.click()"
+              (dragover)="!uploading() && onDragOver($event)"
+              (dragleave)="!uploading() && onDragLeave($event)"
+              (drop)="!uploading() && onDrop($event)"
+            >
+              <mat-icon class="drop-icon">folder_zip</mat-icon>
+              <h3>{{ isDragging() ? 'Drop your file here' : 'Choose a ZIP file' }}</h3>
+              <p>Click to browse or drag and drop your Maven project ZIP here</p>
+              <p class="help-text">Maximum file size: 50MB</p>
+            </div>
+          } @else {
+            <div class="file-info">
+              <div class="file-details">
+                <mat-icon class="file-icon">insert_drive_file</mat-icon>
+                <div class="file-text">
+                  <h4>{{ selectedFile()!.name }}</h4>
+                  <p>{{ getFileSizeFormatted(selectedFile()!.size) }}</p>
+                </div>
+              </div>
+              <div class="file-actions">
+                <button mat-raised-button color="primary" (click)="uploadFile()" [disabled]="uploading()">
+                  <mat-icon>cloud_upload</mat-icon>
+                  Upload
+                </button>
+                <button mat-button (click)="fileInput.click()" [disabled]="uploading()">
+                  <mat-icon>refresh</mat-icon>
+                  Change File
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="requirements">
+          <h4>
+            <mat-icon>checklist</mat-icon>
+            Requirements
+          </h4>
+          <ul>
+            <li>Your project must be a valid Maven project</li>
+            <li>Include pom.xml in the root directory</li>
+            <li>All source code must be in src/main/java</li>
+            <li>Tests must be in src/test/java</li>
+            <li>File must be in ZIP format</li>
+          </ul>
+        </div>
+      }
+
+      <!-- Uploading State -->
+      @if (currentStep() === 'uploading') {
+        <div class="uploading-state">
+          <mat-icon class="uploading-icon">cloud_upload</mat-icon>
+          <h3>Uploading...</h3>
+          <p>Please wait while your submission is being uploaded</p>
+          <mat-progress-bar mode="determinate" [value]="uploadProgress()"></mat-progress-bar>
+          <p class="progress-text">{{ uploadProgress() }}%</p>
+        </div>
+      }
+
+      <!-- Success State -->
+      @if (currentStep() === 'success') {
+        <div class="success-state">
+          <mat-icon class="success-icon">check_circle</mat-icon>
+          <h3>Upload Successful!</h3>
+          <p>Your submission has been received and is being processed</p>
+          @if (submissionId()) {
+            <p class="submission-id">Submission ID: <strong>{{ submissionId() }}</strong></p>
+          }
+          <div class="success-actions">
+            <button mat-raised-button color="primary" (click)="viewSubmission()">
+              <mat-icon>visibility</mat-icon>
+              View Status
+            </button>
+            <button mat-button (click)="uploadAnother()">
+              <mat-icon>add</mat-icon>
+              Upload Another
+            </button>
+            <button mat-button routerLink="/home">
+              <mat-icon>home</mat-icon>
+              Go to Dashboard
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- Error State -->
+      @if (currentStep() === 'error') {
+        <div class="error-state">
+          <mat-icon class="error-icon">error</mat-icon>
+          <h3>Upload Failed</h3>
+          @if (errorMessage()) {
+            <p class="error-message">{{ errorMessage() }}</p>
+          }
+          <div class="error-actions">
+            <button mat-raised-button color="primary" (click)="uploadAnother()">
+              <mat-icon>refresh</mat-icon>
+              Try Again
+            </button>
+            <button mat-button routerLink="/home">
+              <mat-icon>home</mat-icon>
+              Go to Dashboard
+            </button>
+          </div>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+</div>

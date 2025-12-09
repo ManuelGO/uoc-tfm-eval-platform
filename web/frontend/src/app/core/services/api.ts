@@ -102,11 +102,15 @@ export class Api {
   }
 
   getSubmission(id: string): Observable<any> {
-    return this.get(`/submissions/${id}`, true);
+    return this.get(`/submissions/feedback/${id}`, true);
   }
 
   listMySubmissions(): Observable<any[]> {
     return this.get('/submissions/mine', true);
+  }
+
+  deleteSubmission(id: string): Observable<{ status: string }> {
+    return this.delete(`/submissions/${id}`, true);
   }
 
   // Health check

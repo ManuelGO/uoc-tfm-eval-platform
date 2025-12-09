@@ -1,1 +1,84 @@
-<p>list works!</p>
+<div class="pits-container">
+  <div class="pits-header">
+    <h1 class="page-title">
+      <mat-icon class="title-icon">assignment</mat-icon>
+      Available PITs
+    </h1>
+    <p class="page-subtitle">Browse and upload solutions to your assigned PITs</p>
+  </div>
+
+  <!-- Loading State -->
+  @if (loading()) {
+    <div class="loading-container">
+      <mat-spinner></mat-spinner>
+      <p>Loading PITs...</p>
+    </div>
+  }
+
+  <!-- Error State -->
+  @if (error() && !loading()) {
+    <mat-card class="error-card">
+      <mat-card-content>
+        <div class="error-content">
+          <mat-icon class="error-icon">error</mat-icon>
+          <p>{{ error() }}</p>
+          <button mat-raised-button color="primary" (click)="retry()">
+            <mat-icon>refresh</mat-icon>
+            Retry
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  <!-- PITs List -->
+  @if (!loading() && !error()) {
+    @if (pits().length === 0) {
+      <mat-card class="empty-state-card">
+        <mat-card-content>
+          <div class="empty-state">
+            <mat-icon class="empty-icon">inbox</mat-icon>
+            <h3>No PITs available</h3>
+            <p>There are currently no PITs assigned. Please contact your instructor.</p>
+            <button mat-button color="primary" routerLink="/home">
+              <mat-icon>home</mat-icon>
+              Go to Dashboard
+            </button>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    } @else {
+      <div class="pits-grid">
+        @for (pit of pits(); track pit.id) {
+          <mat-card class="pit-card">
+            <mat-card-header>
+              <mat-icon mat-card-avatar class="pit-icon">assignment</mat-icon>
+              <mat-card-title>{{ pit.title }}</mat-card-title>
+              @if (pit.description) {
+                <mat-card-subtitle>{{ pit.description }}</mat-card-subtitle>
+              }
+            </mat-card-header>
+            <mat-card-content>
+              @if (pit.createdAt) {
+                <p class="pit-date">
+                  <mat-icon class="inline-icon">calendar_today</mat-icon>
+                  Created: {{ pit.createdAt | date:'medium' }}
+                </p>
+              }
+            </mat-card-content>
+            <mat-card-actions>
+              <button mat-raised-button color="primary" [routerLink]="['/submissions/upload', pit.id]">
+                <mat-icon>cloud_upload</mat-icon>
+                Upload Solution
+              </button>
+              <button mat-button>
+                <mat-icon>info</mat-icon>
+                Details
+              </button>
+            </mat-card-actions>
+          </mat-card>
+        }
+      </div>
+    }
+  }
+</div>
