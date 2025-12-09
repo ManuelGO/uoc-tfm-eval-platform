@@ -108,7 +108,25 @@ export class SubmissionsService {
       throw new NotFoundException('User not found');
     }
 
-    // 3) Create new submission with status PENDING
+    // 3) Idempotency check: Check if submission already exists for this fileKey + user + pit
+    const existing = await this.submissionsRepo.findOne({
+      where: {
+        s3Key: fileKey,
+        user: { id: userId },
+        pit: { id: pitId },
+      },
+      relations: ['user', 'pit'],
+    });
+
+    if (existing) {
+      // Already exists - return existing submission without re-enqueueing
+      return {
+        status: 'ok',
+        submissionId: existing.id,
+      };
+    }
+
+    // 4) Create new submission with status PENDING
     const submission = this.submissionsRepo.create({
       pit,
       s3Key: fileKey,
@@ -178,5 +196,22 @@ export class SubmissionsService {
       createdAt: s.createdAt,
       updatedAt: s.updatedAt,
     }));
+  }
+
+  async deleteSubmission(id: string, userId: string): Promise<void> {
+    const submission = await this.submissionsRepo.findOne({
+      where: { id },
+      relations: ['user'],
+    });
+
+    if (!submission) {
+      throw new NotFoundException('Submission not found');
+    }
+
+    if (submission.user.id !== userId) {
+      throw new ForbiddenException('You cannot delete this submission');
+    }
+
+    await this.submissionsRepo.remove(submission);
   }
 }

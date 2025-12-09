@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, UseGuards, Delete, Param } from '@nestjs/common';
 import { PitsService } from './pits.service';
 import { AuthGuard } from 'src/auth/auth.guard';
 
@@ -12,5 +12,14 @@ export class PitsController {
   async findAll() {
     // MVP: devolver todos los PITs activos
     return this.pitsService.findAll();
+  }
+
+  // DELETE /pits/:id
+  // ⚠️ Admin-only endpoint (should not be used from frontend without role checks)
+  // TODO: Add role-based authorization when roles are implemented
+  @Delete(':id')
+  async deletePit(@Param('id') id: string) {
+    await this.pitsService.deletePit(id);
+    return { status: 'ok' };
   }
 }

@@ -7,6 +7,7 @@ import {
   Get,
   Param,
   Query,
+  Delete,
 } from '@nestjs/common';
 import { SubmissionsService } from './submissions.service';
 import { RequestUploadDto } from './dto/request-upload.dto';
@@ -65,5 +66,19 @@ export class SubmissionsController {
     }
 
     return this.service.listUserSubmissions(req.user.id, pitId);
+  }
+
+  @UseGuards(AuthGuard)
+  @Delete(':id')
+  async deleteSubmission(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    if (!req.user?.id) {
+      throw new Error('Missing authenticated user');
+    }
+
+    await this.service.deleteSubmission(id, req.user.id);
+    return { status: 'ok' };
   }
 }
