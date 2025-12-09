@@ -25,7 +25,6 @@ RDS_SG_ID="${RDS_SG_ID:-sg-0ddd2f2198ca11ebe}"
 S3_BUCKET="${S3_BUCKET:-uoc-tfm-eval-platform}"
 ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text --profile "$PROFILE")"
 SQS_URL="${SQS_URL:-https://sqs.${REGION}.amazonaws.com/${ACCOUNT_ID}/submissions-queue}"
-DB_URL="${DB_URL:-postgresql://postgres:changeme@tfmdb.cfeggi80y56w.${REGION}.rds.amazonaws.com:5432/tfmdb}"
 SES_REGION="${SES_REGION:-eu-west-1}"
 SES_SENDER="${SES_SENDER:-mgonzalezarve@uoc.edu}"
 
@@ -38,6 +37,14 @@ CLUSTER="${CLUSTER:-uoc-tfm-cluster}"
 ECS_SG_NAME="${ECS_SG_NAME:-tfm-ecs-sg}"
 API_SERVICE="${API_SERVICE:-api-service}"
 WORKER_SERVICE="${WORKER_SERVICE:-worker-service}"
+
+DB_HOST="${DB_HOST:-tfmdb.cfeggi80y56w.${REGION}.rds.amazonaws.com}"
+DB_PORT="${DB_PORT:-5432}"
+DB_USER="${DB_USER:-postgres}"
+DB_PASS="${DB_PASS:-TFMdb#SecureKey9}"
+DB_NAME="${DB_NAME:-tfmdb}"
+DB_SSL="${DB_SSL:-true}"
+DB_URL="${DB_URL:-postgresql://postgres:TFMdb%23SecureKey9@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=require}"
 
 # ====== PRECHECKS ==============================================================
 command -v aws >/dev/null || { echo "AWS CLI not found"; exit 1; }
@@ -176,7 +183,12 @@ cat > /tmp/api-task.json <<JSON
         {"name":"SES_SENDER","value":"${SES_SENDER}"},
         {"name":"AWS_S3_BUCKET","value":"${S3_BUCKET}"},
         {"name":"AWS_SQS_QUEUE_URL","value":"${SQS_URL}"},
-        {"name":"DATABASE_URL","value":"${DB_URL}"}
+        {"name":"DB_HOST","value":"${DB_HOST}"},
+        {"name":"DB_PORT","value":"${DB_PORT}"},
+        {"name":"DB_USER","value":"${DB_USER}"},
+        {"name":"DB_PASS","value":"${DB_PASS}"},
+        {"name":"DB_NAME","value":"${DB_NAME}"},
+        {"name":"DB_SSL","value":"${DB_SSL}"}
       ],
       "logConfiguration": {
         "logDriver": "awslogs",
