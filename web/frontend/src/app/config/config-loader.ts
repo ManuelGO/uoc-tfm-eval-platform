@@ -11,7 +11,6 @@ export const loadConfig = async (): Promise<void> => {
     }
     const config = await response.json();
     store.config = config;
-    console.log('✓ Configuration loaded successfully', config);
   } catch (error) {
     console.error('✗ Failed to load configuration:', error);
     throw error;

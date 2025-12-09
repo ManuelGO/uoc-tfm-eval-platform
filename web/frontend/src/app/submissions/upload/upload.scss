@@ -205,6 +205,16 @@ mat-progress-bar {
   color: var(--mat-sys-primary);
 }
 
+.processing-info {
+  margin: 0.5rem 0 !important;
+  padding: 0.75rem;
+  background-color: rgba(var(--mat-sys-primary-rgb), 0.1);
+  border-left: 3px solid var(--mat-sys-primary);
+  border-radius: 4px;
+  color: var(--mat-sys-on-surface);
+  font-style: italic;
+}
+
 .submission-id {
   margin: 1rem 0 !important;
   padding: 0.75rem;

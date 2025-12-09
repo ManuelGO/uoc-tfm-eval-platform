@@ -88,13 +88,14 @@
           <mat-icon class="success-icon">check_circle</mat-icon>
           <h3>Upload Successful!</h3>
           <p>Your submission has been received and is being processed</p>
+          <p class="processing-info">Tests are being executed. You will be redirected to view the status shortly...</p>
           @if (submissionId()) {
             <p class="submission-id">Submission ID: <strong>{{ submissionId() }}</strong></p>
           }
           <div class="success-actions">
             <button mat-raised-button color="primary" (click)="viewSubmission()">
               <mat-icon>visibility</mat-icon>
-              View Status
+              View Status Now
             </button>
             <button mat-button (click)="uploadAnother()">
               <mat-icon>add</mat-icon>

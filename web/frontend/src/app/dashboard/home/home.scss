@@ -175,6 +175,15 @@
       height: 1rem;
       margin-right: 0.25rem;
     }
+
+    &.status-done {
+      background-color: rgba(76, 175, 80, 0.15) !important;
+      color: rgb(27, 94, 32) !important;
+
+      .status-icon {
+        color: rgb(27, 94, 32);
+      }
+    }
   }
 
   .score-badge {

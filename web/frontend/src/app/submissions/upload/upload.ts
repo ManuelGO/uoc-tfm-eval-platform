@@ -8,8 +8,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatStepperModule } from '@angular/material/stepper';
-import { catchError, finalize, switchMap, tap } from 'rxjs/operators';
+import { catchError, delay, filter, finalize, switchMap, tap } from 'rxjs/operators';
 import { of } from 'rxjs';
+import { HttpEventType } from '@angular/common/http';
 import { Api } from '../../core/services/api';
 
 @Component({
@@ -137,12 +138,14 @@ export class Upload implements OnInit {
           }).pipe(
             tap((event: any) => {
               // Track upload progress
-              if (event.type === 1 && event.total) { // UploadProgress
+              if (event.type === HttpEventType.UploadProgress && event.total) {
                 const progress = Math.round((100 * event.loaded) / event.total);
                 this.uploadProgress.set(progress);
               }
             }),
-            // After S3 upload completes, return fileKey for next step
+            // Filter to only process the final Response event
+            filter((event: any) => event.type === HttpEventType.Response),
+            // After S3 upload completes successfully, return fileKey for next step
             switchMap(() => of(fileKey))
           );
         }),
@@ -161,6 +164,16 @@ export class Upload implements OnInit {
           });
           return of(null);
         }),
+        tap((result) => {
+          if (result) {
+            this.submissionId.set(result.submissionId);
+            this.currentStep.set('success');
+            this.snackBar.open('Submission uploaded successfully! Redirecting...', 'Close', {
+              duration: 1500,
+            });
+          }
+        }),
+        delay(1000),
         finalize(() => {
           // Always reset uploading flag, even if cancelled or errored
           this.uploading.set(false);
@@ -169,11 +182,9 @@ export class Upload implements OnInit {
       )
       .subscribe((result) => {
         if (result) {
-          this.submissionId.set(result.submissionId);
-          this.currentStep.set('success');
-          this.snackBar.open('Submission uploaded successfully!', 'Close', {
-            duration: 4000,
-          });
+          // Automatically navigate to status page after delay
+          // The status page has auto-refresh polling for PENDING/RUNNING submissions
+          this.viewSubmission();
         }
       });
   }
