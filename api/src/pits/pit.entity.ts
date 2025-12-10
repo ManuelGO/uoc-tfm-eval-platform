@@ -25,6 +25,15 @@ export class Pit {
   @Column({ default: true })
   active: boolean;
 
+  @Column({ type: 'varchar', length: 255, default: 'mvn -q test' })
+  testCommand: string;
+
+  @Column({ type: 'int', default: 60000 })
+  maxTimeoutMs: number;
+
+  @Column({ type: 'jsonb', nullable: true })
+  setupCommands?: string[];
+
   @CreateDateColumn()
   createdAt: Date;
 
