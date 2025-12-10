@@ -234,8 +234,7 @@ export class ExecutorService {
 
   /**
    * Parse test results from command output
-   * MVP: Simple parsing based on exit code
-   * TODO: Implement proper test result parsing for different frameworks
+   * Supports Maven Surefire output format
    *
    * @param result      Command execution result
    * @param durationMs  Execution duration
@@ -250,9 +249,6 @@ export class ExecutorService {
     },
     durationMs: number,
   ): ExecutionFeedback {
-    // MVP: Simple pass/fail based on exit code
-    // In production, parse actual test framework output (JUnit XML, etc.)
-
     const feedback: ExecutionFeedback = {
       exitCode: result.exitCode,
       timedOut: result.timedOut,
@@ -261,31 +257,66 @@ export class ExecutorService {
 
     if (result.timedOut) {
       feedback.details = 'Test execution exceeded timeout limit';
-    } else if (result.exitCode === 0) {
-      feedback.totalTests = 1;
-      feedback.passedTests = 1;
-      feedback.failedTests = 0;
-      feedback.details = 'All tests passed';
-    } else {
-      feedback.totalTests = 1;
-      feedback.passedTests = 0;
-      feedback.failedTests = 1;
-      feedback.details = `Tests failed with exit code ${result.exitCode}`;
+      return feedback;
     }
 
-    // TODO: Parse Maven/JUnit output for detailed test results
-    // Example patterns to look for:
-    // - "Tests run: 5, Failures: 2, Errors: 0, Skipped: 0"
-    // - JUnit XML reports
-    // - Test framework specific output
+    // Combine stdout and stderr for parsing
+    const output = result.stdout + '\n' + result.stderr;
+
+    // Try to parse Maven Surefire output
+    // Pattern: "Tests run: 4, Failures: 1, Errors: 0, Skipped: 0"
+    // Note: We take the LAST match, as Maven may print intermediate summaries
+    const mavenPattern = /Tests run:\s*(\d+),\s*Failures:\s*(\d+),\s*Errors:\s*(\d+),\s*Skipped:\s*(\d+)/gi;
+    const matches = Array.from(output.matchAll(mavenPattern));
+    const match = matches.length > 0 ? matches[matches.length - 1] : null;
+
+    if (match) {
+      // Maven/Surefire output found
+      const testsRun = parseInt(match[1], 10);
+      const failures = parseInt(match[2], 10);
+      const errors = parseInt(match[3], 10);
+      const skipped = parseInt(match[4], 10);
+
+      feedback.totalTests = testsRun;
+      feedback.failedTests = failures + errors;
+      feedback.passedTests = testsRun - failures - errors - skipped;
+      feedback.skippedTests = skipped;
+
+      if (feedback.failedTests === 0) {
+        feedback.details = `All ${testsRun} tests passed`;
+      } else {
+        feedback.details = `${feedback.failedTests} of ${testsRun} tests failed`;
+      }
+
+      console.log('[ExecutorService] Parsed Maven test results', {
+        totalTests: feedback.totalTests,
+        passedTests: feedback.passedTests,
+        failedTests: feedback.failedTests,
+        skippedTests: feedback.skippedTests,
+      });
+    } else {
+      // Fallback: Use exit code based logic
+      console.warn('[ExecutorService] Could not parse Maven output, using exit code fallback');
+
+      if (result.exitCode === 0) {
+        feedback.totalTests = 1;
+        feedback.passedTests = 1;
+        feedback.failedTests = 0;
+        feedback.details = 'All tests passed';
+      } else {
+        feedback.totalTests = 1;
+        feedback.passedTests = 0;
+        feedback.failedTests = 1;
+        feedback.details = `Tests failed with exit code ${result.exitCode}`;
+      }
+    }
 
     return feedback;
   }
 
   /**
    * Calculate score from test results
-   * MVP: Simple 0 or 100 based on pass/fail
-   * TODO: Calculate based on pass rate
+   * Calculates score based on pass rate (passedTests / totalTests * 100)
    *
    * @param feedback  Execution feedback
    * @returns         Score (0-100)
@@ -295,15 +326,23 @@ export class ExecutorService {
       return 0;
     }
 
-    // MVP: Binary scoring
+    // Calculate based on pass rate if test counts are available
+    if (feedback.totalTests !== undefined &&
+        feedback.passedTests !== undefined &&
+        feedback.totalTests > 0) {
+      const score = Math.round((feedback.passedTests / feedback.totalTests) * 100);
+      console.log('[ExecutorService] Calculated score', {
+        passedTests: feedback.passedTests,
+        totalTests: feedback.totalTests,
+        score,
+      });
+      return score;
+    }
+
+    // Fallback: Binary scoring based on exit code
     if (feedback.exitCode === 0) {
       return 100;
     }
-
-    // TODO: Calculate based on pass rate
-    // if (feedback.totalTests && feedback.passedTests) {
-    //   return Math.round((feedback.passedTests / feedback.totalTests) * 100);
-    // }
 
     return 0;
   }

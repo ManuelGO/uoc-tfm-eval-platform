@@ -34,6 +34,11 @@ export interface ExecutionFeedback {
   failedTests?: number;
 
   /**
+   * Number of tests that were skipped
+   */
+  skippedTests?: number;
+
+  /**
    * Detailed test results or error messages
    */
   details?: string;
