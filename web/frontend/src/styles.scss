@@ -1,12 +1,52 @@
 // Angular Material theming with Material 3 design spec
 @use '@angular/material' as mat;
 
+// UOC Custom Color Palette - inspired by UOC brand colors
+$uoc-blue: (
+  0: #000000,
+  10: #001424,
+  20: #002441,
+  25: #002f50,
+  30: #003a61,
+  35: #004672,
+  40: #005284,
+  50: #1f6aa7,
+  60: #4683bc,
+  70: #6b9dd1,
+  80: #8fb7e5,
+  90: #b7d1f7,
+  95: #dce8fb,
+  98: #f2f6fd,
+  99: #fafcff,
+  100: #ffffff,
+);
+
+// UOC Accent/Tertiary Color Palette - complementary orange
+$uoc-orange: (
+  0: #000000,
+  10: #2d0f00,
+  20: #4a1f00,
+  25: #5a2700,
+  30: #6a3000,
+  35: #7b3a00,
+  40: #8d4500,
+  50: #b25a00,
+  60: #d87100,
+  70: #ff8a33,
+  80: #ffa25e,
+  90: #ffbc84,
+  95: #ffddc5,
+  98: #fff0e5,
+  99: #fff8f2,
+  100: #ffffff,
+);
+
 html {
   @include mat.theme((
     color: (
       theme-type: light,
-      primary: mat.$violet-palette,
-      tertiary: mat.$cyan-palette,
+      primary: $uoc-blue,
+      tertiary: $uoc-orange,
     ),
     typography: Roboto,
     density: 0,
@@ -29,9 +69,25 @@ body {
   margin: 0;
   font-family: Roboto, "Helvetica Neue", sans-serif;
   color-scheme: light;
-  background-color: var(--mat-sys-surface);
+  background-color: #f5f7fa;
   color: var(--mat-sys-on-surface);
   font: var(--mat-sys-body-medium);
+}
+
+// UOC Custom Variables
+:root {
+  --uoc-primary: #073b73;
+  --uoc-primary-dark: #001e3c;
+  --uoc-secondary: #0066cc;
+  --uoc-accent: #ff6b35;
+  --uoc-bg-light: #f5f7fa;
+  --uoc-bg-lighter: #ffffff;
+  --uoc-border: #e8edf2;
+  --uoc-text-primary: #2d3748;
+  --uoc-text-secondary: #718096;
+  --uoc-success: #48bb78;
+  --uoc-warning: #f6ad55;
+  --uoc-error: #f56565;
 }
 
 // Utility classes
@@ -43,4 +99,37 @@ body {
 
 .mat-mdc-card {
   margin-bottom: 1rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: box-shadow 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  }
+}
+
+// Enhanced button styles
+.mat-mdc-raised-button {
+  border-radius: 8px;
+  font-weight: 500;
+  text-transform: none;
+  padding: 0 24px;
+}
+
+// Typography utilities
+.text-primary {
+  color: var(--uoc-text-primary);
+}
+
+.text-secondary {
+  color: var(--uoc-text-secondary);
+}
+
+// Background utilities
+.bg-light {
+  background-color: var(--uoc-bg-light);
+}
+
+.bg-lighter {
+  background-color: var(--uoc-bg-lighter);
 }

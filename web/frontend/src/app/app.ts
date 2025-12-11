@@ -3,10 +3,11 @@ import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { Navbar } from './core/components/navbar/navbar';
 import { Header } from './core/components/header/header';
+import { Footer } from './core/components/footer/footer';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, Navbar, Header],
+  imports: [RouterOutlet, Navbar, Header, Footer],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })

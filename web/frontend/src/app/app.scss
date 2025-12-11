@@ -1,5 +1,12 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
 .main-content {
-  min-height: calc(100vh - 64px);
+  flex: 1 0 auto;
+  min-height: calc(100vh - 64px - 200px); // navbar height - approximate footer height
 
   // Remove all padding/margin for header view (full width)
   app-header {

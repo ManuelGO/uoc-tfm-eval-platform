@@ -62,10 +62,6 @@
   .submit-button {
     height: 48px;
     font-size: 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
     &:not(:disabled):hover {
@@ -76,6 +72,35 @@
     .button-spinner {
       display: inline-block;
       margin-right: 0.5rem;
+    }
+  }
+
+  // Force proper alignment for Material button content
+  .submit-button ::ng-deep {
+    .mdc-button__label {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 0.5rem !important;
+      line-height: normal !important;
+    }
+
+    .mat-icon {
+      font-size: 1.25rem !important;
+      width: 1.25rem !important;
+      height: 1.25rem !important;
+      line-height: 1.25rem !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+
+    span {
+      display: inline-flex !important;
+      align-items: center !important;
+      line-height: normal !important;
     }
   }
 }
@@ -145,10 +170,37 @@
   }
 
   .resend-button {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
     margin-top: 0.5rem;
+    height: 42px;
+  }
+
+  // Force proper alignment for resend button content
+  .resend-button ::ng-deep {
+    .mdc-button__label {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 0.5rem !important;
+      line-height: normal !important;
+    }
+
+    .mat-icon {
+      font-size: 1.25rem !important;
+      width: 1.25rem !important;
+      height: 1.25rem !important;
+      line-height: 1.25rem !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+
+    span {
+      display: inline-flex !important;
+      align-items: center !important;
+      line-height: normal !important;
+    }
   }
 }
 
