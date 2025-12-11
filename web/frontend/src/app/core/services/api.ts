@@ -4,6 +4,39 @@ import { Observable } from 'rxjs';
 import { APP_CONFIG, AppConfig } from '../../config/app-config';
 import { AuthService } from './auth.service';
 
+// PIT types
+export interface Pit {
+  id: string;
+  code: string;
+  title: string;
+  description?: string;
+  testCommand: string;
+  maxTimeoutMs: number;
+  setupCommands?: string[];
+  testsS3Key?: string | null;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreatePitDto {
+  code: string;
+  title: string;
+  description?: string;
+  testCommand?: string;
+  maxTimeoutMs?: number;
+  setupCommands?: string[];
+}
+
+export interface UpdatePitDto {
+  code?: string;
+  title?: string;
+  description?: string;
+  testCommand?: string;
+  maxTimeoutMs?: number;
+  setupCommands?: string[];
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -80,16 +113,41 @@ export class Api {
   }
 
   // PIT endpoints
-  listPits(): Observable<any[]> {
-    return this.get('/pits', true);
+  listPits(): Observable<Pit[]> {
+    return this.get<Pit[]>('/pits', true);
   }
 
-  getPit(id: string): Observable<any> {
-    return this.get(`/pits/${id}`, true);
+  getPit(id: string): Observable<Pit> {
+    return this.get<Pit>(`/pits/${id}`, true);
   }
 
-  createPit(pit: { title: string }): Observable<any> {
-    return this.post('/pits', pit, true);
+  createPit(pit: CreatePitDto): Observable<Pit> {
+    return this.post<Pit>('/pits', pit, true);
+  }
+
+  updatePit(id: string, pit: UpdatePitDto): Observable<Pit> {
+    return this.http.patch<Pit>(`${this.baseUrl}/pits/${id}`, pit, {
+      headers: this.getHeaders(true),
+    });
+  }
+
+  deletePit(id: string): Observable<{ status: string }> {
+    return this.delete<{ status: string }>(`/pits/${id}`, true);
+  }
+
+  uploadPitTests(id: string, file: File): Observable<{ status: string; key: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return this.http.post<{ status: string; key: string }>(
+      `${this.baseUrl}/pits/${id}/upload-tests`,
+      formData,
+      {
+        headers: new HttpHeaders({
+          Authorization: `Bearer ${this.authService.getToken()}`,
+        }),
+      },
+    );
   }
 
   // Submission endpoints

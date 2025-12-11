@@ -49,125 +49,218 @@ export class ProcessingService {
     const { submissionId, fileKey, pitId } = message;
 
     console.log(`\n${'='.repeat(60)}`);
-    console.log(`[ProcessingService] Starting pipeline for submission: ${submissionId}`);
+    console.log(
+      `[ProcessingService] Starting pipeline for submission: ${submissionId}`,
+    );
     console.log(`${'='.repeat(60)}\n`);
 
     let localZipPath: string | null = null;
     let workspacePath: string | null = null;
     let logs = '';
+    let testsZipPath: string | null = null;
 
     try {
       // ============================================================
       // STEP 1: Download ZIP from S3 (RUN-4)
       // ============================================================
-      console.log(`[Step 1/6] Downloading ZIP from S3...`);
+      console.log('[Step 1/8] Downloading ZIP from S3...');
       try {
-        localZipPath = await this.s3Storage.downloadZipToTemp(fileKey, submissionId);
+        localZipPath = await this.s3Storage.downloadZipToTemp(
+          fileKey,
+          submissionId,
+        );
         console.log(`✓ ZIP downloaded: ${localZipPath}\n`);
       } catch (error) {
-        throw new Error(`Failed to download ZIP from S3: ${(error as Error).message}`);
+        throw new Error(
+          `Failed to download ZIP from S3: ${(error as Error).message}`,
+        );
       }
 
       // ============================================================
       // STEP 2: Extract ZIP to workspace (RUN-5)
       // ============================================================
-      console.log(`[Step 2/6] Extracting ZIP to workspace...`);
+      console.log('[Step 2/8] Extracting ZIP to workspace...');
       try {
-        workspacePath = await this.workspace.extractZip(localZipPath, submissionId);
+        workspacePath = await this.workspace.extractZip(
+          localZipPath,
+          submissionId,
+        );
         console.log(`✓ ZIP extracted to: ${workspacePath}\n`);
       } catch (error) {
-        throw new Error(`Failed to extract ZIP: ${(error as Error).message}`);
+        throw new Error(
+          `Failed to extract ZIP: ${(error as Error).message}`,
+        );
       }
 
       // ============================================================
       // STEP 3: Load PIT configuration (RUN-6)
       // ============================================================
-      console.log(`[Step 3/6] Loading PIT configuration...`);
+      console.log('[Step 3/8] Loading PIT configuration...');
       const pitConfiguration = await (() => {
         try {
           return this.pitConfig.loadConfig(pitId);
         } catch (error) {
-          throw new Error(`Failed to load PIT config: ${(error as Error).message}`);
+          throw new Error(
+            `Failed to load PIT config: ${(error as Error).message}`,
+          );
         }
       })();
-      console.log(`✓ PIT config loaded: ${pitConfiguration.language}/${pitConfiguration.buildTool}\n`);
+      console.log(
+        `✓ PIT config loaded: ${pitConfiguration.language}/${pitConfiguration.buildTool}\n`,
+      );
 
       // ============================================================
-      // STEP 4: Execute tests (RUN-7)
+      // STEP 4: Download instructor tests ZIP from S3 (optional)
+      //        Key convention: pits/<pitId>/tests.zip
       // ============================================================
-      console.log(`[Step 4/6] Executing tests...`);
+      console.log(
+        '[Step 4/8] Downloading instructor tests ZIP from S3 (if available)...',
+      );
+      const testsKey = `pits/${pitId}/tests.zip`;
+
+      try {
+        testsZipPath = await this.s3Storage.downloadZipToTemp(
+          testsKey,
+          `${submissionId}-tests`,
+        );
+        console.log(
+          `✓ Instructor tests ZIP downloaded: ${testsZipPath} (key=${testsKey})\n`,
+        );
+      } catch (error) {
+        console.warn(
+          `⚠️  No instructor tests ZIP found or failed to download for PIT ${pitId}: ${(error as Error).message}`,
+        );
+        testsZipPath = null;
+      }
+
+      // ============================================================
+      // STEP 5: Merge instructor tests into workspace (optional)
+      //
+      // If testsZipPath exists:
+      //  - Extract tests.zip into the same workspace
+      //  - Overwrite student's pom.xml / test dirs with professor's versions
+      // If not:
+      //  - Continue with student's project only (backwards-compatible)
+      // ============================================================
+      if (testsZipPath && workspacePath) {
+        console.log(
+          '[Step 5/8] Merging instructor tests into workspace directory...',
+        );
+        try {
+          await this.workspace.mergeTestsIntoWorkspace(
+            testsZipPath,
+            workspacePath,
+          );
+          console.log('✓ Instructor tests merged into workspace\n');
+        } catch (error) {
+          throw new Error(
+            `Failed to merge instructor tests into workspace: ${(error as Error).message}`,
+          );
+        }
+      } else {
+        console.log(
+          '[ProcessingService] No instructor tests ZIP available, continuing with student submission only\n',
+        );
+      }
+
+      // ============================================================
+      // STEP 6: Execute tests (RUN-7)
+      // ============================================================
+      console.log('[Step 6/8] Executing tests...');
       const executionResult = await (() => {
         try {
           return this.executor.executeTests(
-            workspacePath,
+            workspacePath!,
             pitConfiguration,
-            submissionId
+            submissionId,
           );
         } catch (error) {
-          throw new Error(`Failed to execute tests: ${(error as Error).message}`);
+          throw new Error(
+            `Failed to execute tests: ${(error as Error).message}`,
+          );
         }
       })();
-      console.log(`✓ Tests executed: ${executionResult.status} (score: ${executionResult.score})\n`);
+      console.log(
+        `✓ Tests executed: ${executionResult.status} (score: ${executionResult.score})\n`,
+      );
       logs = executionResult.logs;
 
       // ============================================================
-      // STEP 5: Upload logs to S3 (RUN-8)
+      // STEP 7: Upload logs to S3 (RUN-8)
       // ============================================================
-      console.log(`[Step 5/6] Uploading logs to S3...`);
+      console.log('[Step 7/8] Uploading logs to S3...');
       let logsS3Key: string | null = null;
       try {
         logsS3Key = await this.s3Storage.uploadLogs(
           submissionId,
           logs,
-          this.config.runnerMaxLogBytes
+          this.config.runnerMaxLogBytes,
         );
         console.log(`✓ Logs uploaded: ${logsS3Key}\n`);
       } catch (error) {
-        console.warn(`⚠️  Failed to upload logs (continuing): ${(error as Error).message}`);
+        console.warn(
+          `⚠️  Failed to upload logs (continuing): ${(error as Error).message}`,
+        );
         // Don't throw - continue with DB update even if log upload fails
       }
 
       // ============================================================
-      // STEP 6: Update submission result in DB (RUN-9)
+      // STEP 8: Update submission result in DB (RUN-9)
       // ============================================================
-      console.log(`[Step 6/6] Updating database...`);
+      console.log('[Step 8/8] Updating database...');
       try {
-        const dbStatus = this.mapExecutionStatusToDbStatus(executionResult.status);
+        const dbStatus = this.mapExecutionStatusToDbStatus(
+          executionResult.status,
+        );
 
         await this.database.updateSubmissionResult(submissionId, {
           status: dbStatus,
           score: executionResult.score,
-          feedback: executionResult.feedback as unknown as Record<string, unknown>,
+          feedback: executionResult.feedback as unknown as Record<
+            string,
+            unknown
+          >,
           logsS3Key,
         });
-        console.log(`✓ Database updated successfully\n`);
+        console.log('✓ Database updated successfully\n');
       } catch (error) {
-        throw new Error(`Failed to update database: ${(error as Error).message}`);
+        throw new Error(
+          `Failed to update database: ${(error as Error).message}`,
+        );
       }
 
       // ============================================================
       // SUCCESS: Pipeline completed
       // ============================================================
       console.log(`${'='.repeat(60)}`);
-      console.log(`✅ Pipeline completed successfully for: ${submissionId}`);
+      console.log(
+        `✅ Pipeline completed successfully for: ${submissionId}`,
+      );
       console.log(`   Status: ${executionResult.status}`);
       console.log(`   Score: ${executionResult.score}`);
       console.log(`${'='.repeat(60)}\n`);
-
     } catch (error) {
       // ============================================================
       // ERROR HANDLING: Mark submission as ERROR in database
       // ============================================================
       console.error(`\n${'='.repeat(60)}`);
-      console.error(`❌ Pipeline failed for submission: ${submissionId}`);
+      console.error(
+        `❌ Pipeline failed for submission: ${submissionId}`,
+      );
       console.error(`${'='.repeat(60)}`);
       console.error(`Error: ${(error as Error).message}`);
-      console.error(`Stack trace:\n${(error as Error).stack}\n`);
+      console.error(
+        `Stack trace:\n${(error as Error).stack}\n`,
+      );
 
       // Try to save error state to database
       try {
         // Generate error logs
-        const errorLogs = this.generateErrorLogs(error as Error, message, logs);
+        const errorLogs = this.generateErrorLogs(
+          error as Error,
+          message,
+          logs,
+        );
 
         // Try to upload error logs
         let errorLogsS3Key: string | null = null;
@@ -175,11 +268,15 @@ export class ProcessingService {
           errorLogsS3Key = await this.s3Storage.uploadLogs(
             submissionId,
             errorLogs,
-            this.config.runnerMaxLogBytes
+            this.config.runnerMaxLogBytes,
           );
-          console.log(`✓ Error logs uploaded: ${errorLogsS3Key}`);
+          console.log(
+            `✓ Error logs uploaded: ${errorLogsS3Key}`,
+          );
         } catch (uploadError) {
-          console.error(`⚠️  Failed to upload error logs: ${(uploadError as Error).message}`);
+          console.error(
+            `⚠️  Failed to upload error logs: ${(uploadError as Error).message}`,
+          );
         }
 
         // Update database with ERROR status
@@ -193,15 +290,20 @@ export class ProcessingService {
           logsS3Key: errorLogsS3Key,
         });
 
-        console.log(`✓ Database updated with ERROR status\n`);
+        console.log('✓ Database updated with ERROR status\n');
       } catch (dbError) {
-        console.error(`❌ Failed to update database with error status:`, dbError);
-        console.error(`   Stack trace:\n${(dbError as Error).stack}`);
+        console.error(
+          '❌ Failed to update database with error status:',
+          dbError,
+        );
+        console.error(
+          `   Stack trace:\n${(dbError as Error).stack}`,
+        );
         // Even if DB update fails, we continue (message will be deleted)
       }
 
       console.error(`${'='.repeat(60)}`);
-      console.error(`⚠️  Pipeline failed but runner continues`);
+      console.error('⚠️  Pipeline failed but runner continues');
       console.error(`${'='.repeat(60)}\n`);
 
       // Strategy: Don't throw - let SQS delete the message
@@ -215,7 +317,9 @@ export class ProcessingService {
           this.workspace.cleanWorkspace(submissionId);
           console.log(`🧹 Workspace cleaned: ${submissionId}`);
         } catch (cleanupError) {
-          console.warn(`⚠️  Failed to clean workspace: ${(cleanupError as Error).message}`);
+          console.warn(
+            `⚠️  Failed to clean workspace: ${(cleanupError as Error).message}`,
+          );
         }
       }
     }
@@ -224,7 +328,9 @@ export class ProcessingService {
   /**
    * Map execution status to database status
    */
-  private mapExecutionStatusToDbStatus(status: ExecutionStatus): SubmissionStatus {
+  private mapExecutionStatusToDbStatus(
+    status: ExecutionStatus,
+  ): SubmissionStatus {
     switch (status) {
       case ExecutionStatus.DONE:
         return 'DONE';
@@ -239,7 +345,11 @@ export class ProcessingService {
   /**
    * Generate error logs for failed submissions
    */
-  private generateErrorLogs(error: Error, message: SubmissionMessage, partialLogs: string): string {
+  private generateErrorLogs(
+    error: Error,
+    message: SubmissionMessage,
+    partialLogs: string,
+  ): string {
     const errorLog = `
 ========================================
 SUBMISSION PROCESSING ERROR
@@ -273,6 +383,12 @@ ${partialLogs || 'No logs captured'}
   private detectFailureStep(error: Error): string {
     const message = error.message.toLowerCase();
 
+    if (message.includes('download') && message.includes('tests')) {
+      return 'Download instructor tests ZIP from S3';
+    }
+    if (message.includes('merge') && message.includes('tests')) {
+      return 'Merge instructor tests into workspace';
+    }
     if (message.includes('download')) return 'Download ZIP from S3';
     if (message.includes('extract')) return 'Extract ZIP';
     if (message.includes('pit config')) return 'Load PIT configuration';

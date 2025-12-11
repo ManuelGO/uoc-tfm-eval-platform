@@ -60,6 +60,67 @@ export class WorkspaceService {
   }
 
   /**
+   * Merge instructor tests ZIP into an existing workspace.
+   *
+   * This is used for the "professor tests + student solution" model:
+   * - workspaceDir already contains the student's submission
+   * - testsZipPath contains pom.xml + src/test/... provided by instructor
+   * - Files from testsZipPath OVERWRITE existing ones in the workspace.
+   *
+   * @param testsZipPath Path to instructor tests ZIP (already downloaded)
+   * @param workspaceDir Path to existing workspace directory
+   */
+  async mergeTestsIntoWorkspace(
+    testsZipPath: string,
+    workspaceDir: string,
+  ): Promise<void> {
+    const resolvedWorkspace = resolve(workspaceDir);
+
+    console.log('[WorkspaceService] Merging instructor tests into workspace', {
+      testsZipPath,
+      workspaceDir: resolvedWorkspace,
+    });
+
+    // Ensure workspace exists
+    if (!existsSync(resolvedWorkspace)) {
+      throw new Error(
+        `Workspace directory does not exist: ${resolvedWorkspace}`,
+      );
+    }
+
+    try {
+      // Extract tests ZIP directly into existing workspace
+      // extract-zip will overwrite files with same path (desired behavior)
+      await extract(testsZipPath, { dir: resolvedWorkspace });
+
+      console.log('[WorkspaceService] Instructor tests extracted', {
+        testsZipPath,
+        workspaceDir: resolvedWorkspace,
+      });
+
+      // Verify integrity again after merge
+      this.verifyWorkspaceIntegrity(resolvedWorkspace);
+
+      console.log(
+        '[WorkspaceService] Instructor tests merged successfully into workspace',
+        {
+          workspaceDir: resolvedWorkspace,
+        },
+      );
+    } catch (error) {
+      console.error(
+        '[WorkspaceService] Failed to merge instructor tests into workspace',
+        {
+          testsZipPath,
+          workspaceDir: resolvedWorkspace,
+          error,
+        },
+      );
+      throw error;
+    }
+  }
+
+  /**
    * Clean up workspace directory for a submission
    *
    * @param submissionId UUID of the submission
@@ -139,7 +200,8 @@ export class WorkspaceService {
     const relativePath = relative(absoluteWorkspace, absoluteFile);
 
     // If relative path starts with '..' or is absolute, it's trying to escape
-    const isSafe = !relativePath.startsWith('..') && !resolve(relativePath).startsWith('/');
+    const isSafe =
+      !relativePath.startsWith('..') && !resolve(relativePath).startsWith('/');
 
     if (!isSafe) {
       console.warn('[WorkspaceService] Detected path traversal attempt', {

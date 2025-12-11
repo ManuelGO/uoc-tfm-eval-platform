@@ -6,6 +6,16 @@
 
 .pits-header {
   margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+
+  > div {
+    flex: 1;
+    min-width: 250px;
+  }
 }
 
 .page-title {
@@ -125,18 +135,50 @@
     color: var(--mat-sys-on-primary);
   }
 
-  .pit-date {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.875rem;
-    color: var(--mat-sys-on-surface-variant);
-    margin: 0.5rem 0 0 0;
+  .pit-info {
+    .pit-detail,
+    .pit-date {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      color: var(--mat-sys-on-surface-variant);
+      margin: 0.5rem 0;
 
-    .inline-icon {
-      font-size: 1rem;
-      width: 1rem;
-      height: 1rem;
+      .inline-icon {
+        font-size: 1rem;
+        width: 1rem;
+        height: 1rem;
+
+        &.success {
+          color: #4caf50;
+        }
+
+        &.warning {
+          color: #ff9800;
+        }
+      }
+
+      strong {
+        font-weight: 500;
+        color: var(--mat-sys-on-surface);
+      }
+
+      .success-text {
+        color: #4caf50;
+        font-weight: 500;
+      }
+
+      .warning-text {
+        color: #ff9800;
+        font-weight: 500;
+      }
+    }
+
+    .tests-status {
+      background-color: rgba(0, 0, 0, 0.02);
+      padding: 0.5rem;
+      border-radius: 4px;
     }
   }
 
@@ -144,6 +186,12 @@
     display: flex;
     gap: 0.5rem;
     padding: 0 16px 16px;
+    flex-wrap: wrap;
+
+    button {
+      flex: 1;
+      min-width: fit-content;
+    }
   }
 }
 

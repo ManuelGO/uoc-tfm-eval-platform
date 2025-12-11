@@ -1,0 +1,205 @@
+<div class="edit-pit-container">
+  @if (loadingPit()) {
+    <div class="loading-container">
+      <mat-spinner></mat-spinner>
+      <p>Loading PIT...</p>
+    </div>
+  } @else {
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>edit</mat-icon>
+          Edit PIT
+        </mat-card-title>
+      </mat-card-header>
+
+      <mat-card-content>
+        <form [formGroup]="pitForm" (ngSubmit)="onSubmit()">
+          <div class="form-grid">
+            <!-- Code -->
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>PIT Code</mat-label>
+              <input matInput formControlName="code" placeholder="e.g., PIT-2024-01" />
+              <mat-icon matPrefix>code</mat-icon>
+              @if (codeControl.invalid && codeControl.touched) {
+                <mat-error>{{ getCodeErrorMessage() }}</mat-error>
+              }
+              <mat-hint>Unique identifier for the PIT</mat-hint>
+            </mat-form-field>
+
+            <!-- Title -->
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Title</mat-label>
+              <input matInput formControlName="title" placeholder="e.g., Introduction to Java" />
+              <mat-icon matPrefix>title</mat-icon>
+              @if (titleControl.invalid && titleControl.touched) {
+                <mat-error>{{ getTitleErrorMessage() }}</mat-error>
+              }
+            </mat-form-field>
+
+            <!-- Description -->
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Description</mat-label>
+              <textarea
+                matInput
+                formControlName="description"
+                rows="3"
+                placeholder="Brief description of the PIT"
+              ></textarea>
+              <mat-icon matPrefix>description</mat-icon>
+            </mat-form-field>
+
+            <!-- Test Command -->
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Test Command</mat-label>
+              <input matInput formControlName="testCommand" placeholder="e.g., mvn -q test" />
+              <mat-icon matPrefix>terminal</mat-icon>
+              @if (testCommandControl.invalid && testCommandControl.touched) {
+                <mat-error>{{ getTestCommandErrorMessage() }}</mat-error>
+              }
+              <mat-hint>Command to run tests</mat-hint>
+            </mat-form-field>
+
+            <!-- Max Timeout -->
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Max Timeout (ms)</mat-label>
+              <input matInput type="number" formControlName="maxTimeoutMs" />
+              <mat-icon matPrefix>timer</mat-icon>
+              @if (maxTimeoutMsControl.invalid && maxTimeoutMsControl.touched) {
+                <mat-error>{{ getMaxTimeoutErrorMessage() }}</mat-error>
+              }
+              <mat-hint>Maximum execution time in milliseconds</mat-hint>
+            </mat-form-field>
+
+            <!-- Setup Commands -->
+            <div class="setup-commands-section full-width">
+              <h3>Setup Commands (Optional)</h3>
+              <div class="setup-command-input">
+                <mat-form-field appearance="outline" class="command-input">
+                  <mat-label>Add Setup Command</mat-label>
+                  <input
+                    matInput
+                    formControlName="setupCommand"
+                    placeholder="e.g., mvn clean install"
+                    (keyup.enter)="addSetupCommand()"
+                  />
+                  <mat-icon matPrefix>build</mat-icon>
+                </mat-form-field>
+                <button
+                  mat-raised-button
+                  type="button"
+                  (click)="addSetupCommand()"
+                  [disabled]="!pitForm.controls.setupCommand.value"
+                >
+                  <mat-icon>add</mat-icon>
+                  Add
+                </button>
+              </div>
+
+              @if (setupCommands().length > 0) {
+                <mat-chip-listbox class="setup-commands-list">
+                  @for (command of setupCommands(); track $index) {
+                    <mat-chip-option>
+                      {{ command }}
+                      <button matChipRemove (click)="removeSetupCommand($index)">
+                        <mat-icon>cancel</mat-icon>
+                      </button>
+                    </mat-chip-option>
+                  }
+                </mat-chip-listbox>
+              }
+            </div>
+          </div>
+
+          <!-- Tests Upload Section -->
+          <div class="tests-upload-section full-width">
+            <h3>Tests File</h3>
+
+            @if (pit()?.testsS3Key) {
+              <div class="tests-status">
+                <mat-icon class="success-icon">check_circle</mat-icon>
+                <span>Tests uploaded successfully</span>
+                <span class="tests-key">{{ pit()?.testsS3Key }}</span>
+              </div>
+            } @else {
+              <div class="tests-status warning">
+                <mat-icon class="warning-icon">warning</mat-icon>
+                <span>No tests uploaded yet</span>
+              </div>
+            }
+
+            <div class="file-upload-container">
+              <input
+                type="file"
+                accept=".zip"
+                (change)="onTestFileSelected($event)"
+                #fileInput
+                style="display: none"
+              />
+
+              @if (selectedTestFile()) {
+                <div class="selected-file">
+                  <mat-icon>attach_file</mat-icon>
+                  <span>{{ selectedTestFile()?.name }}</span>
+                  <button mat-icon-button (click)="removeTestFile()" type="button">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                </div>
+                <button
+                  mat-raised-button
+                  color="accent"
+                  type="button"
+                  (click)="uploadTests()"
+                  [disabled]="uploadingTests()"
+                >
+                  <mat-icon>cloud_upload</mat-icon>
+                  @if (uploadingTests()) {
+                    Uploading...
+                  } @else {
+                    Upload Tests
+                  }
+                </button>
+              } @else {
+                <button
+                  mat-stroked-button
+                  type="button"
+                  (click)="fileInput.click()"
+                >
+                  <mat-icon>folder_open</mat-icon>
+                  Select Tests File (.zip)
+                </button>
+              }
+            </div>
+            <p class="hint">Upload a .zip file containing the test files for this PIT</p>
+          </div>
+
+          <!-- Actions -->
+          <div class="actions">
+            <button
+              mat-raised-button
+              type="button"
+              (click)="cancel()"
+              [disabled]="loading()"
+            >
+              <mat-icon>cancel</mat-icon>
+              Cancel
+            </button>
+            <button
+              mat-raised-button
+              color="primary"
+              type="submit"
+              [disabled]="pitForm.invalid || loading()"
+            >
+              <mat-icon>save</mat-icon>
+              @if (loading()) {
+                Updating...
+              } @else {
+                Update PIT
+              }
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  }
+</div>

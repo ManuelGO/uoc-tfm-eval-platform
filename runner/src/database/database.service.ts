@@ -181,6 +181,56 @@ constructor(config: RunnerConfig) {
     }
   }
 
+    /**
+   * Get tests S3 key for a given PIT
+   *
+   * Reads the testsS3Key column from the pits table.
+   *
+   * @param pitId PIT UUID
+   * @returns     testsS3Key string or null if not set
+   * @throws      Error if PIT does not exist
+   */
+  async getPitTestsKey(pitId: string): Promise<string | null> {
+    console.log('[DatabaseService] Fetching testsS3Key for PIT', { pitId });
+
+    const query = `
+      SELECT "testsS3Key"
+      FROM pits
+      WHERE id = $1
+    `;
+
+    let client: PoolClient | null = null;
+
+    try {
+      client = await this.pool.connect();
+      const result = await client.query<{ testsS3Key: string | null }>(query, [pitId]);
+
+      if (result.rowCount === 0) {
+        console.warn('[DatabaseService] PIT not found when fetching testsS3Key', { pitId });
+        throw new Error(`PIT not found: ${pitId}`);
+      }
+
+      const testsS3Key = result.rows[0].testsS3Key ?? null;
+
+      console.log('[DatabaseService] Loaded testsS3Key for PIT', {
+        pitId,
+        testsS3Key,
+      });
+
+      return testsS3Key;
+    } catch (error) {
+      console.error('[DatabaseService] Failed to fetch testsS3Key for PIT', {
+        pitId,
+        error,
+      });
+      throw error;
+    } finally {
+      if (client) {
+        client.release();
+      }
+    }
+  }
+
   /**
    * Test database connection
    *

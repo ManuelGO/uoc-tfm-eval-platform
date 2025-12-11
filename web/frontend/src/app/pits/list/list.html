@@ -1,10 +1,16 @@
 <div class="pits-container">
   <div class="pits-header">
-    <h1 class="page-title">
-      <mat-icon class="title-icon">assignment</mat-icon>
-      Available PITs
-    </h1>
-    <p class="page-subtitle">Browse and upload solutions to your assigned PITs</p>
+    <div>
+      <h1 class="page-title">
+        <mat-icon class="title-icon">assignment</mat-icon>
+        Available PITs
+      </h1>
+      <p class="page-subtitle">Browse and upload solutions to your assigned PITs</p>
+    </div>
+    <button mat-raised-button color="primary" (click)="createPit()">
+      <mat-icon>add</mat-icon>
+      Create PIT
+    </button>
   </div>
 
   <!-- Loading State -->
@@ -59,21 +65,61 @@
               }
             </mat-card-header>
             <mat-card-content>
-              @if (pit.createdAt) {
-                <p class="pit-date">
-                  <mat-icon class="inline-icon">calendar_today</mat-icon>
-                  Created: {{ pit.createdAt | date:'medium' }}
+              <div class="pit-info">
+                <p class="pit-detail">
+                  <mat-icon class="inline-icon">code</mat-icon>
+                  <strong>Code:</strong> {{ pit.code }}
                 </p>
-              }
+                @if (pit.testCommand) {
+                  <p class="pit-detail">
+                    <mat-icon class="inline-icon">terminal</mat-icon>
+                    <strong>Test:</strong> {{ pit.testCommand }}
+                  </p>
+                }
+                @if (pit.maxTimeoutMs) {
+                  <p class="pit-detail">
+                    <mat-icon class="inline-icon">timer</mat-icon>
+                    <strong>Timeout:</strong> {{ pit.maxTimeoutMs }}ms
+                  </p>
+                }
+                <p class="pit-detail tests-status">
+                  @if (pit.testsS3Key) {
+                    <mat-icon class="inline-icon success">check_circle</mat-icon>
+                    <strong>Tests:</strong> <span class="success-text">Uploaded</span>
+                  } @else {
+                    <mat-icon class="inline-icon warning">warning</mat-icon>
+                    <strong>Tests:</strong> <span class="warning-text">Not uploaded</span>
+                  }
+                </p>
+                @if (pit.createdAt) {
+                  <p class="pit-date">
+                    <mat-icon class="inline-icon">calendar_today</mat-icon>
+                    Created: {{ pit.createdAt | date:'medium' }}
+                  </p>
+                }
+              </div>
             </mat-card-content>
             <mat-card-actions>
               <button mat-raised-button color="primary" [routerLink]="['/submissions/upload', pit.id]">
                 <mat-icon>cloud_upload</mat-icon>
                 Upload Solution
               </button>
-              <button mat-button>
-                <mat-icon>info</mat-icon>
-                Details
+              <button mat-button (click)="editPit(pit.id)">
+                <mat-icon>edit</mat-icon>
+                Edit
+              </button>
+              <button
+                mat-button
+                color="warn"
+                (click)="deletePit(pit, $event)"
+                [disabled]="isDeleting(pit.id)"
+              >
+                <mat-icon>delete</mat-icon>
+                @if (isDeleting(pit.id)) {
+                  Deleting...
+                } @else {
+                  Delete
+                }
               </button>
             </mat-card-actions>
           </mat-card>

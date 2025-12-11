@@ -13,6 +13,16 @@ export class GlobalErrorHandler implements ErrorHandler {
   private readonly snackBar = inject(MatSnackBar);
 
   handleError(error: Error | HttpErrorResponse): void {
+    // Always log to console for debugging
+    console.error('Global error caught:', error);
+
+    // Check if this is a technical/development error that should not be shown to users
+    if (this.shouldIgnoreError(error)) {
+      // Log but don't show to user
+      console.warn('Technical error ignored for user notification:', error);
+      return;
+    }
+
     let message = 'An unexpected error occurred';
     let duration = 5000;
 
@@ -21,12 +31,9 @@ export class GlobalErrorHandler implements ErrorHandler {
       message = this.getHttpErrorMessage(error);
       duration = 7000; // Longer duration for HTTP errors
     } else if (error instanceof Error) {
-      // Client-side error
-      message = error.message || message;
+      // Client-side error - use a generic message for production
+      message = 'An unexpected error occurred. Please try again.';
     }
-
-    // Log to console for debugging
-    console.error('Global error caught:', error);
 
     // Show user-friendly message
     this.snackBar.open(message, 'Close', {
@@ -35,6 +42,58 @@ export class GlobalErrorHandler implements ErrorHandler {
       verticalPosition: 'top',
       panelClass: ['error-snackbar'],
     });
+  }
+
+  /**
+   * Determines if an error should be ignored for user notification
+   * (but still logged to console for debugging)
+   */
+  private shouldIgnoreError(error: Error | HttpErrorResponse): boolean {
+    // Don't ignore HTTP errors - these are usually relevant to the user
+    if (error instanceof HttpErrorResponse) {
+      return false;
+    }
+
+    if (error instanceof Error) {
+      const message = error.message || '';
+
+      // Ignore Angular internal errors (NG0100, NG0200, etc.)
+      if (/^NG\d+/.test(message)) {
+        return true;
+      }
+
+      // Ignore ExpressionChangedAfterItHasBeenCheckedError
+      if (message.includes('ExpressionChangedAfterItHasBeenChecked')) {
+        return true;
+      }
+
+      // Ignore errors from third-party scripts or extensions
+      if (message.includes('Extension context invalidated')) {
+        return true;
+      }
+
+      // Ignore script loading errors (often from ad blockers or extensions)
+      if (message.includes('Loading chunk') || message.includes('Failed to fetch')) {
+        return true;
+      }
+
+      // Ignore ResizeObserver errors (browser internal)
+      if (message.includes('ResizeObserver')) {
+        return true;
+      }
+
+      // Ignore null/undefined errors that are likely development issues
+      if (message.includes('Cannot read property') || message.includes('Cannot read properties')) {
+        return true;
+      }
+
+      // Ignore hydration errors (SSR related)
+      if (message.includes('hydration')) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   private getHttpErrorMessage(error: HttpErrorResponse): string {

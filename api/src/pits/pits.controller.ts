@@ -7,7 +7,10 @@ import {
   Post,
   Body,
   Patch,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { PitsService } from './pits.service';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { CreatePitDto } from './dto/create-pit.dto';
@@ -52,5 +55,22 @@ export class PitsController {
   async deletePit(@Param('id') id: string) {
     await this.pitsService.deletePit(id);
     return { status: 'ok' };
+  }
+
+  // POST /pits/:id/upload-tests
+  // Should be restricted to teachers/admins in the future
+  @Post(':id/upload-tests')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadTests(
+    @Param('id') id: string,
+    @UploadedFile()
+    file: {
+      buffer: Buffer;
+      originalname: string;
+      mimetype: string;
+      size: number;
+    },
+  ) {
+    return this.pitsService.uploadTests(id, file);
   }
 }

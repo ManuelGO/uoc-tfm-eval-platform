@@ -31,6 +31,16 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'pits/create',
+    loadComponent: () => import('./pits/create/create').then(m => m.CreatePit),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'pits/edit/:id',
+    loadComponent: () => import('./pits/edit/edit').then(m => m.EditPit),
+    canActivate: [authGuard]
+  },
+  {
     path: 'pits/attach',
     loadComponent: () => import('./pits/attach/attach').then(m => m.Attach),
     canActivate: [authGuard]

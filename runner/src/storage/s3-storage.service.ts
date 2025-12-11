@@ -14,6 +14,7 @@ import type { RunnerConfig } from '../config/config.js';
  */
 export const SUBMISSIONS_PREFIX = 'submissions';
 export const LOGS_PREFIX = 'logs';
+export const PITS_PREFIX = 'pits';
 
 export class S3StorageService {
   private readonly client: S3Client;
@@ -143,6 +144,62 @@ export class S3StorageService {
       throw error;
     }
   }
+
+   /**
+   * Download professor tests ZIP for a PIT into a local temp path.
+   *
+   * @param testsKey   S3 object key where tests.zip is stored (e.g. "pits/<pitId>/tests.zip")
+   * @param pitId      PIT UUID (used only for local folder naming)
+   * @returns          Local path to downloaded tests.zip
+   */
+  async downloadTestsZipToTemp(
+    testsKey: string,
+    pitId: string,
+  ): Promise<string> {
+    // Puedes elegir la estructura que quieras. Ejemplo:
+    const localPath = `./tmp/pits/${pitId}/tests.zip`;
+
+    this.ensureDirectory(dirname(localPath));
+
+    const command = new GetObjectCommand({
+      Bucket: this.bucket,
+      Key: testsKey,
+    });
+
+    let response: GetObjectCommandOutput;
+    try {
+      response = await this.client.send(command);
+    } catch (error) {
+      console.error('[S3StorageService] Failed to download PIT tests from S3', {
+        bucket: this.bucket,
+        key: testsKey,
+        error,
+      });
+      throw error;
+    }
+
+    if (!response.Body) {
+      throw new Error('S3 GetObject response has no Body (tests.zip)');
+    }
+
+    const writeStream = createWriteStream(localPath);
+    const bodyStream = response.Body as NodeJS.ReadableStream;
+
+    await new Promise<void>((resolve, reject) => {
+      bodyStream
+        .pipe(writeStream)
+        .on('finish', () => resolve())
+        .on('error', (err) => reject(err));
+    });
+
+    console.log('[S3StorageService] PIT tests download complete', {
+      key: testsKey,
+      localPath,
+    });
+
+    return localPath;
+  }
+
 
   private ensureDirectory(path: string): void {
     mkdirSync(path, { recursive: true });
