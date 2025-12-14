@@ -89,8 +89,8 @@ runner/
 │   └── processing/
 │       └── processing.service.ts    # Pipeline orchestrator
 ├── pits/
-│   ├── sample-pit.json              # Example PIT configuration
-│   └── README.md                    # PIT config documentation
+│   └── sample-pit.json              # Example PIT configuration
+│                                    # (PIT config docs: see Section 7)
 ├── Dockerfile                       # Multi-stage Docker build
 ├── .dockerignore                    # Docker ignore rules
 ├── ECS-DEPLOYMENT.md                # Deployment guide
@@ -290,7 +290,76 @@ Please check your .env file or environment configuration.
 
 ---
 
-## 7. Processing Pipeline
+## 7. PIT Configuration Files
+
+The runner uses JSON configuration files (PITs) to define how submissions
+are executed and evaluated.
+
+Each PIT configuration specifies:
+- Language
+- Build tool
+- Test command
+- Timeout
+- Optional setup and environment variables
+
+### Configuration Format
+
+Each PIT has its own JSON configuration file named `{pitId}.json`.
+
+#### Required Fields
+
+- **language**: Programming language (e.g., "java", "python", "javascript")
+- **buildTool**: Build tool or package manager (e.g., "maven", "gradle", "npm")
+- **testCommand**: Command to execute tests
+- **maxTimeoutMs**: Maximum execution timeout in milliseconds
+
+#### Optional Fields
+
+- **setupCommands**: Array of commands to run before test execution (e.g., dependency installation)
+- **environment**: Environment variables to set during execution
+- **requiredFiles**: Files or directories that must be present in the submission
+
+### Example Configuration
+
+```json
+{
+  "language": "java",
+  "buildTool": "maven",
+  "testCommand": "mvn -q test",
+  "maxTimeoutMs": 60000,
+  "setupCommands": [
+    "mvn -q clean compile"
+  ],
+  "environment": {
+    "JAVA_HOME": "/usr/lib/jvm/java-17-openjdk"
+  },
+  "requiredFiles": [
+    "pom.xml",
+    "src/"
+  ]
+}
+```
+
+### Available Configurations
+
+- **sample-pit.json**: Java Maven project with JUnit tests
+
+### Adding New PITs
+
+1. Create a new JSON file with the PIT ID as filename (e.g., `python-unittest.json`)
+2. Define all required fields according to the PIT's requirements
+3. Test the configuration by running a sample submission
+4. Document any specific requirements or dependencies
+
+### Configuration Notes
+
+- Configuration files are loaded and validated at runtime
+- Invalid configurations will prevent submission processing
+- Configurations are cached after first load for performance
+
+---
+
+## 8. Processing Pipeline
 
 ### Complete 6-Step Pipeline
 
@@ -348,7 +417,7 @@ Error: Failed to execute tests: Command timeout
 
 ---
 
-## 8. Deployment
+## 9. Deployment
 
 ### Docker
 
@@ -419,7 +488,7 @@ aws logs tail /ecs/uoc-tfm-runner --follow
 
 ---
 
-## 9. Dependencies
+## 10. Dependencies
 
 ### Production Dependencies
 - `@aws-sdk/client-s3@^3.932.0` - S3 operations
@@ -438,7 +507,7 @@ aws logs tail /ecs/uoc-tfm-runner --follow
 
 ---
 
-## 10. Implementation Status
+## 11. Implementation Status
 
 ### ✅ RUN-1: Initialize Runner Service Project
 **Status:** ✅ Completed
@@ -546,7 +615,7 @@ aws logs tail /ecs/uoc-tfm-runner --follow
 
 ---
 
-## 11. Security Considerations
+## 12. Security Considerations
 
 - ✅ Non-root user in Docker (UID 1001)
 - ✅ Isolated workspace per submission
@@ -562,7 +631,7 @@ aws logs tail /ecs/uoc-tfm-runner --follow
 
 ---
 
-## 12. Monitoring & Observability
+## 13. Monitoring & Observability
 
 ### Logging
 - CloudWatch Logs integration
@@ -605,7 +674,7 @@ Stack trace: ...
 
 ---
 
-## 13. Scaling & Performance
+## 14. Scaling & Performance
 
 ### Current Configuration
 - **Max messages per poll:** 10
@@ -634,7 +703,7 @@ aws ecs update-service \
 
 ---
 
-## 14. Future Enhancements
+## 15. Future Enhancements
 
 - [ ] Multi-language support (Python, JavaScript, C++)
 - [ ] Advanced test result parsing (JUnit XML, TAP)
@@ -648,7 +717,7 @@ aws ecs update-service \
 
 ---
 
-## 15. Troubleshooting
+## 16. Troubleshooting
 
 ### Common Issues
 

@@ -53,7 +53,7 @@ export class EditPit implements OnInit {
     description: [''],
     testCommand: ['mvn -q test', [Validators.required]],
     maxTimeoutMs: [60000, [Validators.required, Validators.min(1000)]],
-    setupCommand: [''], // Temporary field for adding setup commands
+    setupCommand: [''],
   });
 
   ngOnInit(): void {

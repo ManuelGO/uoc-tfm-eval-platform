@@ -36,9 +36,21 @@ export class PitConfigService {
 
     // Check if config file exists
     if (!existsSync(configPath)) {
-      const error = `PIT configuration file not found: ${configPath}`;
-      console.error('[PitConfigService]', error);
-      throw new Error(error);
+    const fallbackId = process.env.DEFAULT_PIT_ID ?? 'default';
+    const fallbackPath = this.getConfigPath(fallbackId);
+
+    if (!existsSync(fallbackPath)) {
+      throw new Error(`PIT configuration file not found: ${configPath} (and fallback missing: ${fallbackPath})`);
+    }
+
+    console.warn('[PitConfigService] PIT config missing, using fallback', {
+      pitId,
+      fallbackId,
+    });
+
+    const fallbackConfig = await this.loadConfig(fallbackId);
+    this.configCache.set(pitId, fallbackConfig);
+    return fallbackConfig;
     }
 
     try {

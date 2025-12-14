@@ -145,7 +145,6 @@ export class Home implements OnInit {
       return;
     }
 
-    // Add to deleting set
     const deleting = new Set(this.deletingSubmissions());
     deleting.add(submissionId);
     this.deletingSubmissions.set(deleting);

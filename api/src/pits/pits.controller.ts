@@ -34,7 +34,7 @@ export class PitsController {
   }
 
   // POST /pits
-  // Should be restricted to teachers/admins in the future
+  // TODO: Should be restricted to teachers/admins in the future
   @Post()
   async createPit(@Body() dto: CreatePitDto) {
     const pit = await this.pitsService.create(dto);
@@ -42,7 +42,7 @@ export class PitsController {
   }
 
   // PATCH /pits/:id
-  // Should be restricted to teachers/admins in the future
+  // TODO: Should be restricted to teachers/admins in the future
   @Patch(':id')
   async updatePit(@Param('id') id: string, @Body() dto: UpdatePitDto) {
     const pit = await this.pitsService.update(id, dto);
@@ -50,7 +50,7 @@ export class PitsController {
   }
 
   // DELETE /pits/:id
-  // Admin-only endpoint (TODO: role-based authorization)
+  // TODO: Admin-only endpoint (TODO: role-based authorization)
   @Delete(':id')
   async deletePit(@Param('id') id: string) {
     await this.pitsService.deletePit(id);
@@ -58,7 +58,7 @@ export class PitsController {
   }
 
   // POST /pits/:id/upload-tests
-  // Should be restricted to teachers/admins in the future
+  // TODO: Should be restricted to teachers/admins in the future
   @Post(':id/upload-tests')
   @UseInterceptors(FileInterceptor('file'))
   async uploadTests(

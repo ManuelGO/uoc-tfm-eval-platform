@@ -173,20 +173,17 @@ export class SubmissionsService {
   }
 
   async listUserSubmissions(userId: string, pitId?: string) {
-    // 1) WHERE fuertemente tipado
     const where: FindOptionsWhere<Submission> = {
       user: { id: userId },
       ...(pitId ? { pit: { id: pitId } as unknown as Pit } : {}),
     };
 
-    // 2) Resultado tipado explícitamente como Submission[]
     const submissions: Submission[] = await this.submissionsRepo.find({
       where,
       relations: ['pit'],
       order: { createdAt: 'DESC' },
     });
 
-    // 3) Map con tipo explícito en el callback
     return submissions.map((s: Submission) => ({
       submissionId: s.id,
       pitId: s.pit ? s.pit.id : null,

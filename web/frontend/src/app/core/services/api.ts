@@ -64,20 +64,6 @@ export class Api {
     return headers;
   }
 
-  /**
-   * @deprecated Use AuthService.setToken() instead
-   */
-  setAuthToken(token: string): void {
-    this.authService.setToken(token);
-  }
-
-  /**
-   * @deprecated Use AuthService.clearToken() instead
-   */
-  clearAuthToken(): void {
-    this.authService.clearToken();
-  }
-
   // Generic HTTP methods
   get<T>(path: string, authenticated: boolean = false): Observable<T> {
     return this.http.get<T>(`${this.baseUrl}${path}`, {

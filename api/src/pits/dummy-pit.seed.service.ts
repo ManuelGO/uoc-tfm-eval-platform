@@ -3,6 +3,17 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Pit } from './pit.entity';
 
+/**
+ * Service to automatically create a test PIT in the database.
+ *
+ * This service is intended solely for debugging and testing purposes
+ * during system development. It creates a PIT with a fixed ID that can be
+ * used for end-to-end testing without needing to manually create PITs
+ * through the interface.
+ *
+ * NOTE: This service runs automatically on application startup
+ * and checks if the dummy PIT already exists before creating it.
+ */
 @Injectable()
 export class DummyPitSeedService implements OnApplicationBootstrap {
   constructor(

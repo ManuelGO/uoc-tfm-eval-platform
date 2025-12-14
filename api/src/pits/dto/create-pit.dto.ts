@@ -1,4 +1,3 @@
-// api/src/pits/dto/create-pit.dto.ts
 import {
   IsString,
   IsNotEmpty,
@@ -24,12 +23,12 @@ export class CreatePitDto {
 
   @IsString()
   @IsOptional()
-  testCommand?: string; // e.g. "mvn -q test"
+  testCommand?: string;
 
   @IsInt()
   @Min(1000)
   @IsOptional()
-  maxTimeoutMs?: number; // e.g. 60000
+  maxTimeoutMs?: number;
 
   @IsArray()
   @IsString({ each: true })

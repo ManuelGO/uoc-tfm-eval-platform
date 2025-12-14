@@ -52,5 +52,3 @@ logs/
 .eslintrc*
 eslint.config.*
 
-# Claude
-.claude/

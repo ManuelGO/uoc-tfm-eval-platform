@@ -64,9 +64,6 @@ export class PitsService {
       throw new NotFoundException('Pit not found');
     }
 
-    // Note: If there are associated submissions, they will be handled by cascade rules
-    // or foreign key constraints defined in the database schema
-
     await this.pitRepo.remove(pit);
   }
 

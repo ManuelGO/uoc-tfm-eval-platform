@@ -16,7 +16,9 @@ export class SesService {
   }
 
   async sendLoginEmail(email: string, token: string) {
-    const url = `${this.config.get('APP_URL')}/auth/verify?token=${token}`;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const appUrl = this.config.get('APP_URL') || 'http://localhost:4200';
+    const url = `${appUrl}/auth/verify?token=${token}`;
 
     const params = {
       Source: this.sender,

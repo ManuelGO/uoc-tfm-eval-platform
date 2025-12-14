@@ -3,7 +3,7 @@ import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { Api } from '../../services/api';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-navbar',
@@ -12,7 +12,7 @@ import { Api } from '../../services/api';
   styleUrl: './navbar.scss',
 })
 export class Navbar {
-  private api = inject(Api);
+  private authService = inject(AuthService);
   private router = inject(Router);
 
   get isAuthenticated(): boolean {
@@ -20,7 +20,7 @@ export class Navbar {
   }
 
   logout(): void {
-    this.api.clearAuthToken();
+    this.authService.clearToken();
     this.router.navigate(['/auth/login']);
   }
 }

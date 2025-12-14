@@ -74,7 +74,7 @@ export class SqsConsumerService {
    * Stop the polling loop
    */
   public stop(): void {
-    console.log('🛑 Stopping SQS Consumer...');
+    console.log('Stopping SQS Consumer...');
     this.isRunning = false;
   }
 
@@ -88,7 +88,7 @@ export class SqsConsumerService {
         const messages = await this.receiveMessages();
 
         if (messages && messages.length > 0) {
-          console.log(`📨 Received ${messages.length} message(s) from SQS`);
+          console.log(`Received ${messages.length} message(s) from SQS`);
 
           // Process all messages in parallel
           await Promise.all(
@@ -96,11 +96,11 @@ export class SqsConsumerService {
           );
         } else {
           // No messages received (polling timed out)
-          console.log('⏱️  No messages received (polling timeout)');
+          console.log('⏱No messages received (polling timeout)');
         }
       } catch (error) {
-        console.error('❌ Error in polling loop:', error);
-        console.error('   Continuing to poll...\n');
+        console.error(' Error in polling loop:', error);
+        console.error(' Continuing to poll...\n');
 
         // Wait a bit before retrying to avoid tight error loops
         await this.sleep(5000);
@@ -141,7 +141,7 @@ export class SqsConsumerService {
       const submissionMessage = this.parseMessageBody(message.Body);
       submissionId = submissionMessage.submissionId;
 
-      console.log(`\n🔧 Processing submission: ${submissionId}`);
+      console.log(`\n Processing submission: ${submissionId}`);
       console.log(`   File Key: ${submissionMessage.fileKey}`);
       console.log(`   User ID: ${submissionMessage.userId}`);
       console.log(`   PIT ID: ${submissionMessage.pitId}`);
@@ -156,10 +156,9 @@ export class SqsConsumerService {
       await this.deleteMessage(message, submissionId);
 
     } catch (error) {
-      console.error(`❌ Error processing submission ${submissionId}:`, error);
+      console.error(`Error processing submission ${submissionId}:`, error);
       console.error(`   Message will become visible again after ${this.config.visibilityTimeout}s`);
-      // Message will not be deleted, so SQS will make it visible again
-      // This allows for retry or manual inspection
+
     }
   }
 
@@ -206,9 +205,9 @@ export class SqsConsumerService {
       });
 
       await this.client.send(command);
-      console.log(`🗑️  Deleted message from queue: ${submissionId}`);
+      console.log(` Deleted message from queue: ${submissionId}`);
     } catch (error) {
-      console.error(`❌ Failed to delete message for ${submissionId}:`, error);
+      console.error(`Failed to delete message for ${submissionId}:`, error);
       // Not throwing here - message will become visible again
     }
   }

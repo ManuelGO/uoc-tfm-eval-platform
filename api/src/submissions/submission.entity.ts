@@ -37,10 +37,6 @@ export class Submission {
   })
   status: SubmissionStatus;
 
-  /** -------------------------
-   *  NEW FIELDS FOR FEEDBACK
-   *  ------------------------- */
-
   // Runner score (0-100) or null if pending
   @Column({ type: 'float', nullable: true })
   score: number | null;
